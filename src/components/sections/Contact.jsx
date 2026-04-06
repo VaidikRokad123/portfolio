@@ -13,26 +13,25 @@ const Contact = () => {
 
   useGSAP(() => {
     gsap.from('.contact-heading', {
-      scrollTrigger: { trigger: '.contact-heading', start: 'top 85%' },
-      y: 60, opacity: 0, duration: 0.8, ease: 'power3.out',
+      scrollTrigger: { trigger: '.contact-heading', start: 'top 85%', once: true },
+      y: 50, opacity: 0, duration: 0.8, ease: 'power3.out',
     })
     gsap.from('.contact-left', {
-      scrollTrigger: { trigger: '.contact-grid', start: 'top 80%' },
-      x: -60, opacity: 0, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: '.contact-grid', start: 'top 82%', once: true },
+      x: -50, opacity: 0, duration: 0.9, ease: 'power3.out',
     })
     gsap.from('.contact-right', {
-      scrollTrigger: { trigger: '.contact-grid', start: 'top 80%' },
-      x: 60, opacity: 0, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: '.contact-grid', start: 'top 82%', once: true },
+      x: 50, opacity: 0, duration: 0.9, ease: 'power3.out',
     })
     gsap.from('.contact-social-link', {
-      scrollTrigger: { trigger: '.contact-socials', start: 'top 85%' },
-      y: 30, opacity: 0, duration: 0.5, stagger: 0.12, ease: 'power3.out',
+      scrollTrigger: { trigger: '.contact-socials', start: 'top 88%', once: true },
+      y: 25, opacity: 0, duration: 0.45, stagger: 0.1, ease: 'power3.out',
     })
   }, { scope: sectionRef })
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Open mailto with form values
     const subject = encodeURIComponent(`Portfolio Contact from ${form.name}`)
     const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`)
     window.open(`mailto:${personalInfo.email}?subject=${subject}&body=${body}`)
@@ -45,27 +44,36 @@ const Contact = () => {
   const socials = [
     { label: 'GitHub', href: personalInfo.github, icon: 'ri-github-fill', color: '#e2e8f0' },
     { label: 'LinkedIn', href: personalInfo.linkedin, icon: 'ri-linkedin-fill', color: '#0ea5e9' },
-    { label: 'Email', href: `mailto:${personalInfo.email}`, icon: 'ri-mail-line', color: '#6366f1' },
+    { label: 'Email', href: `mailto:${personalInfo.email}`, icon: 'ri-mail-line', color: '#818cf8' },
+  ]
+
+  const footerLinks = [
+    { label: 'GitHub', href: personalInfo.github, icon: 'ri-github-fill' },
+    { label: 'LinkedIn', href: personalInfo.linkedin, icon: 'ri-linkedin-fill' },
+    { label: 'LeetCode', href: 'https://leetcode.com/u/harry0018/', icon: 'ri-trophy-line' },
+    { label: 'CodeChef', href: 'https://www.codechef.com/users/harry0018', icon: 'ri-star-line' },
+    { label: 'Codeforces', href: 'https://codeforces.com/profile/harry0018', icon: 'ri-code-line' },
+    { label: 'Email', href: `mailto:${personalInfo.email}`, icon: 'ri-mail-line' },
   ]
 
   return (
     <section id="contact" ref={sectionRef} className="contact-section">
       <div className="section-container">
-        <div className="section-label">
-          <span className="section-label-line" />
-          <span>Get In Touch</span>
-        </div>
-
-        <h2 className="contact-heading section-heading">
-          Let&apos;s <span className="gradient-text">Build</span> Something
-        </h2>
-
         <div className="contact-grid">
-          {/* LEFT */}
+          {/* LEFT — heading + intro + socials */}
           <div className="contact-left">
+            <div className="section-label">
+              <span className="section-label-line" />
+              <span>Get In Touch</span>
+            </div>
+
+            <h2 className="contact-heading section-heading">
+              Let&apos;s <span className="gradient-text">Build</span> Something
+            </h2>
+
             <p className="contact-intro">
-              I&apos;m always open to discussing new opportunities, interesting projects, 
-              or just having a conversation about technology and problem-solving. 
+              I&apos;m always open to discussing new opportunities, interesting projects,
+              or just having a conversation about technology and problem-solving.
               Feel free to reach out!
             </p>
 
@@ -92,14 +100,6 @@ const Contact = () => {
                 </a>
               ))}
             </div>
-
-            <a
-              href="/resume.pdf"
-              download="Vaidik_Rokad_Resume.pdf"
-              className="contact-resume-btn"
-            >
-              <i className="ri-file-download-line" /> Download Resume
-            </a>
           </div>
 
           {/* RIGHT — Form */}
@@ -158,9 +158,18 @@ const Contact = () => {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer with all links */}
       <div className="contact-footer">
-        <p>Designed &amp; Built by <span className="gradient-text">Vaidik Rokad</span> · 2024</p>
+        <div className="footer-links">
+          {footerLinks.map((l) => (
+            <a key={l.label} href={l.href} target="_blank" rel="noreferrer" className="footer-link">
+              <i className={l.icon} /> {l.label}
+            </a>
+          ))}
+        </div>
+        <p className="footer-copy">
+          Designed &amp; Built by <span className="gradient-text">Vaidik Rokad</span> · 2024
+        </p>
       </div>
     </section>
   )

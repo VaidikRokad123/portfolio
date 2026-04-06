@@ -72,7 +72,6 @@ const Achievements = () => {
                   <span className="ach-icon" style={{ background: `${item.color}22` }}>
                     {item.icon}
                   </span>
-                  <span className="ach-year">{item.year}</span>
                 </div>
                 <h3 className="ach-title" style={{ color: item.color }}>{item.title}</h3>
                 <p className="ach-subtitle">{item.subtitle}</p>

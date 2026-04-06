@@ -110,8 +110,8 @@ const Projects = () => {
     })
 
     gsap.from('.project-card', {
-      scrollTrigger: { trigger: '.projects-grid', start: 'top 80%' },
-      y: 80, opacity: 0, duration: 0.8, stagger: 0.2, ease: 'power3.out',
+      scrollTrigger: { trigger: '.projects-grid', start: 'top 82%', once: true },
+      y: 40, opacity: 0, duration: 0.7, ease: 'power3.out',
     })
   }, { scope: sectionRef })
 

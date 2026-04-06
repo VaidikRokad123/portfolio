@@ -6,58 +6,74 @@ import { personalInfo } from '../../data/portfolio'
 
 gsap.registerPlugin(ScrollTrigger)
 
+const cpData = [
+  {
+    platform: 'LeetCode',
+    rating: '1863',
+    badge: 'Knight · Top 5%',
+    color: '#f59e0b',
+    icon: 'ri-trophy-line',
+    link: 'https://leetcode.com/u/harry0018/',
+  },
+  {
+    platform: 'CodeChef',
+    rating: '3★',
+    badge: '3-Star Rated',
+    color: '#c084fc',
+    icon: 'ri-star-line',
+    link: 'https://www.codechef.com/users/harry0018',
+  },
+  {
+    platform: 'Codeforces',
+    rating: '1369',
+    badge: 'Pupil',
+    color: '#60a5fa',
+    icon: 'ri-code-line',
+    link: 'https://codeforces.com/profile/harry0018',
+  },
+]
+
 const About = () => {
   const sectionRef = useRef(null)
 
   useGSAP(() => {
-    // Heading reveal
     gsap.from('.about-heading', {
-      scrollTrigger: { trigger: '.about-heading', start: 'top 85%' },
-      y: 60, opacity: 0, duration: 0.8, ease: 'power3.out',
+      scrollTrigger: { trigger: '.about-heading', start: 'top 88%', once: true },
+      y: 40, opacity: 0, duration: 0.7, ease: 'power3.out',
     })
-
-    // Left column
     gsap.from('.about-edu-card', {
-      scrollTrigger: { trigger: '.about-edu-card', start: 'top 82%' },
-      x: -60, opacity: 0, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: '.about-edu-card', start: 'top 85%', once: true },
+      x: -40, opacity: 0, duration: 0.8, ease: 'power3.out',
+    })
+    // CP cards: only translate, NO opacity so they're never invisible
+    gsap.from('.cp-card', {
+      scrollTrigger: { trigger: '.about-cp-grid', start: 'top 92%', once: true },
+      y: 20, duration: 0.5, stagger: 0.1, ease: 'power3.out',
+    })
+    gsap.from('.about-stat-card', {
+      scrollTrigger: { trigger: '.about-stats-row', start: 'top 92%', once: true },
+      y: 15, duration: 0.45, stagger: 0.08, ease: 'power3.out',
     })
 
-    // Right column — stagger cards
-    gsap.from('.about-cp-card', {
-      scrollTrigger: { trigger: '.about-cp-grid', start: 'top 80%' },
-      y: 50, opacity: 0, duration: 0.7, stagger: 0.15, ease: 'power3.out',
-    })
-
-    // Animate CGPA counter
+    // CGPA counter
     const cgpaEl = document.querySelector('.about-cgpa-value')
     if (cgpaEl) {
       ScrollTrigger.create({
-        trigger: cgpaEl,
-        start: 'top 85%',
-        once: true,
+        trigger: cgpaEl, start: 'top 88%', once: true,
         onEnter: () => {
           gsap.to({ val: 0 }, {
-            val: 8.33,
-            duration: 1.5,
-            ease: 'power2.out',
+            val: 8.33, duration: 1.4, ease: 'power2.out',
             onUpdate: function () { cgpaEl.textContent = this.targets()[0].val.toFixed(2) },
           })
         },
       })
     }
-
-    // Coursework tags stagger
-    gsap.from('.about-tag', {
-      scrollTrigger: { trigger: '.about-tags', start: 'top 85%' },
-      scale: 0.7, opacity: 0, duration: 0.5, stagger: 0.07, ease: 'back.out(1.7)',
-    })
   }, { scope: sectionRef })
 
   return (
     <section id="about" ref={sectionRef} className="about-section">
       <div className="section-container">
 
-        {/* Section label */}
         <div className="section-label">
           <span className="section-label-line" />
           <span>About Me</span>
@@ -69,11 +85,11 @@ const About = () => {
         </h2>
 
         <div className="about-grid">
-          {/* LEFT — Education */}
+          {/* ── LEFT — Education ── */}
           <div className="about-left">
             <p className="about-bio">
-              I&apos;m a Computer Science student at Nirma University with a strong foundation 
-              in full-stack development, competitive programming, and AI systems. I thrive at 
+              I&apos;m a Computer Science student at Nirma University with a strong foundation
+              in full-stack development, competitive programming, and AI systems. I thrive at
               the intersection of clean code and creative problem-solving.
             </p>
 
@@ -95,51 +111,54 @@ const About = () => {
                 </div>
               </div>
             </div>
-
-            <div className="about-tags-label">Relevant Coursework</div>
-            <div className="about-tags">
-              {personalInfo.education.coursework.map((tag) => (
-                <span key={tag} className="about-tag">{tag}</span>
-              ))}
-            </div>
           </div>
 
-          {/* RIGHT — Competitive Programming */}
+          {/* ── RIGHT — Competitive Programming ── */}
           <div className="about-right">
-            <p className="about-cp-title">Competitive Programming</p>
+            <p className="about-cp-title">
+              <i className="ri-sword-line" /> Competitive Programming
+            </p>
+
             <div className="about-cp-grid">
-              {personalInfo.competitive.map((item) => (
+              {cpData.map((item) => (
                 <a
                   key={item.platform}
                   href={item.link}
                   target="_blank"
                   rel="noreferrer"
-                  className="about-cp-card glass-card"
+                  className="cp-card glass-card"
                   style={{ '--cp-color': item.color }}
                 >
-                  <div className="about-cp-platform">{item.platform}</div>
-                  <div className="about-cp-rating" style={{ color: item.color }}>
-                    {item.rating}
+                  <div className="cp-card-left">
+                    <div className="cp-icon" style={{ color: item.color, background: `${item.color}18` }}>
+                      <i className={item.icon} />
+                    </div>
+                    <div>
+                      <p className="cp-platform">{item.platform}</p>
+                      <p className="cp-badge" style={{ color: item.color }}>{item.badge}</p>
+                    </div>
                   </div>
-                  <div className="about-cp-detail">{item.detail}</div>
-                  <div className="about-cp-glow" style={{ background: item.color }} />
+                  <div className="cp-card-right">
+                    <span className="cp-rating-num" style={{ color: item.color }}>
+                      {item.rating}
+                    </span>
+                  </div>
+                  <div className="cp-card-glow" style={{ background: item.color }} />
                 </a>
               ))}
             </div>
 
             <div className="about-stats-row">
-              <div className="about-stat">
-                <span className="about-stat-value">500+</span>
-                <span className="about-stat-label">Problems Solved</span>
-              </div>
-              <div className="about-stat">
-                <span className="about-stat-value">3</span>
-                <span className="about-stat-label">Platforms</span>
-              </div>
-              <div className="about-stat">
-                <span className="about-stat-value">Top 5%</span>
-                <span className="about-stat-label">LeetCode Global</span>
-              </div>
+              {[
+                { value: '500+', label: 'Problems Solved' },
+                { value: '3', label: 'Platforms' },
+                { value: 'Top 5%', label: 'LeetCode Rank' },
+              ].map((s) => (
+                <div key={s.label} className="about-stat-card glass-card">
+                  <span className="about-stat-value">{s.value}</span>
+                  <span className="about-stat-label">{s.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

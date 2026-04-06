@@ -1,34 +1,45 @@
 import { useEffect, useRef, useState } from 'react'
-import gsap from 'gsap'
-import { personalInfo } from '../../data/portfolio'
+
+const navLinks = [
+  { label: 'Home',         href: '#hero' },
+  { label: 'About',        href: '#about' },
+  { label: 'Projects',     href: '#projects' },
+  { label: 'Skills',       href: '#skills' },
+  { label: 'Achievements', href: '#achievements' },
+  { label: 'Contact',      href: '#contact' },
+]
 
 const Navbar = () => {
   const navRef = useRef(null)
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-
-  const navLinks = [
-    { label: 'Home', href: '#hero' },
-    { label: 'About', href: '#about' },
-    { label: 'Projects', href: '#projects' },
-    { label: 'Skills', href: '#skills' },
-    { label: 'Achievements', href: '#achievements' },
-    { label: 'Contact', href: '#contact' },
-  ]
+  const [activeSection, setActiveSection] = useState('#hero')
 
   useEffect(() => {
-    // Animate navbar in on mount
-    gsap.from(navRef.current, {
-      y: -80,
-      opacity: 0,
-      duration: 1,
-      delay: 0.3,
-      ease: 'power3.out',
-    })
-
     const handleScroll = () => setScrolled(window.scrollY > 60)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Active section tracking
+  useEffect(() => {
+    const sectionIds = navLinks.map((l) => l.href.replace('#', ''))
+    const observers = []
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id)
+      if (!el) return
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) setActiveSection(`#${id}`)
+        },
+        { rootMargin: '-40% 0px -55% 0px' }
+      )
+      obs.observe(el)
+      observers.push(obs)
+    })
+
+    return () => observers.forEach((o) => o.disconnect())
   }, [])
 
   const handleNavClick = (e, href) => {
@@ -39,7 +50,6 @@ const Navbar = () => {
   }
 
   useEffect(() => {
-    // Close menu on outside click
     if (!menuOpen) return
     const handler = () => setMenuOpen(false)
     setTimeout(() => document.addEventListener('click', handler), 0)
@@ -47,7 +57,7 @@ const Navbar = () => {
   }, [menuOpen])
 
   return (
-    <nav ref={navRef} className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
+    <nav ref={navRef} className={`navbar navbar--visible ${scrolled ? 'navbar--scrolled' : ''}`}>
       <div className="nav-logo">
         <span className="nav-logo-text">VR</span>
         <span className="nav-logo-dot" />
@@ -58,7 +68,7 @@ const Navbar = () => {
           <li key={link.label}>
             <a
               href={link.href}
-              className="nav-link"
+              className={`nav-link ${activeSection === link.href ? 'nav-link--active' : ''}`}
               onClick={(e) => handleNavClick(e, link.href)}
             >
               {link.label}

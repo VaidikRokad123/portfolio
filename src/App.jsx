@@ -13,9 +13,10 @@ import Contact from './components/sections/Contact'
 function App() {
   return (
     <>
-      {/* Fixed 3D Canvas — stays behind all sections */}
+      {/* Fixed 3D Canvas — transparent so body bg-image shows through */}
       <Canvas
         id="canvas-elem"
+        gl={{ alpha: true, antialias: true }}
         style={{
           height: '100vh',
           width: '100vw',
@@ -23,6 +24,7 @@ function App() {
           top: 0,
           left: 0,
           zIndex: 1,
+          background: 'transparent',
         }}
       >
         <Suspense fallback={null}>
