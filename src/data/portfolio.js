@@ -17,7 +17,7 @@ export const personalInfo = {
     university: "Nirma University",
     location: "Ahmedabad, India",
     cgpa: "8.33",
-    period: "2022 – 2026",
+    period: "2023 – 2027",
     coursework: ["DSA", "OS", "DBMS", "CN", "ML", "OOP"],
   },
   competitive: [
@@ -62,6 +62,7 @@ export const projects = [
       "ML Recommendation Engine",
       "Real-time Order Tracking",
     ],
+    github: "https://github.com/VaidikRokad123/Mined-Delta_Force",
   },
   {
     id: "delivery-optimizer",
@@ -79,6 +80,7 @@ export const projects = [
       "Real-time Map Integration",
       "Fleet Analytics Dashboard",
     ],
+    github: "https://github.com/VaidikRokad123/Route-Optimizer",
   },
   {
     id: "banking-portal",
@@ -96,6 +98,7 @@ export const projects = [
       "Real-time Transactions",
       "Role-based Access Control",
     ],
+    github: "https://github.com/VaidikRokad123/Banking-Portal",
   },
 ];
 

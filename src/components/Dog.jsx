@@ -29,14 +29,14 @@ const Dog = () => {
   // useFrame: mouse tracking + idle bobbing (on outer group)
   useFrame((state) => {
     if (!groupRef.current) return
-    // Smooth mouse follow
-    const tX = mouseRef.current.y * -0.06
-    const tY = mouseRef.current.x * 0.11
-    groupRef.current.rotation.x += (tX - groupRef.current.rotation.x) * 0.04
-    groupRef.current.rotation.y += (tY - groupRef.current.rotation.y) * 0.04
+    // Smooth mouse follow — stronger multipliers for more movement
+    const tX = mouseRef.current.y * -0.18
+    const tY = mouseRef.current.x * 0.28
+    groupRef.current.rotation.x += (tX - groupRef.current.rotation.x) * 0.08
+    groupRef.current.rotation.y += (tY - groupRef.current.rotation.y) * 0.08
     // Idle float — gentle sin-wave Y offset
     const t = state.clock.getElapsedTime()
-    groupRef.current.position.y = Math.sin(t * 0.5) * 0.022
+    groupRef.current.position.y = Math.sin(t * 0.5) * 0.025
   })
 
   // Transparent WebGL background
@@ -101,9 +101,9 @@ const Dog = () => {
 
   // ─── GSAP SCROLL ───────────────────────────────────────────────────────────
   useGSAP(() => {
-    dogModel.current.scene.scale.set(0.9, 0.9, 0.9)
+    dogModel.current.scene.scale.set(1, 1, 1)
 
-    // Smooth scale-down: 0.9 → 0.8 (hero to skills)
+    // Smooth scale-down: 1 → 0.8 (hero to skills)
     gsap.to(dogModel.current.scene.scale, {
       x: 0.8, y: 0.8, z: 0.8,
       ease: 'power1.inOut',
@@ -112,6 +112,19 @@ const Dog = () => {
         endTrigger: '#skills',
         start: 'top top',
         end: 'top top',
+        scrub: 1.5,
+      },
+    })
+
+    // Move dog slightly up as user scrolls (-0.55 → -0.35)
+    gsap.to(dogModel.current.scene.position, {
+      y: -0.45,
+      ease: 'power1.inOut',
+      scrollTrigger: {
+        trigger: '#hero',
+        endTrigger: '#about',
+        start: 'top top',
+        end: 'bottom bottom',
         scrub: 1.5,
       },
     })

@@ -36,7 +36,7 @@ const ProjectModal = ({ project, onClose }) => {
           ))}
         </div>
         <a
-          href={`https://github.com/VaidikRokad123`}
+          href={project.github}
           target="_blank"
           rel="noreferrer"
           className="modal-github-btn"
@@ -56,13 +56,21 @@ const ProjectCard = ({ project, index, onClick }) => {
     const card = cardRef.current
     if (!card) return
     const rect = card.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 12
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -12
-    gsap.to(card, { rotateY: x, rotateX: y, duration: 0.4, ease: 'power2.out', transformPerspective: 800 })
+    const nx = (e.clientX - rect.left) / rect.width - 0.5
+    const ny = (e.clientY - rect.top) / rect.height - 0.5
+    gsap.to(card, {
+      rotateY: nx * 12,
+      rotateX: ny * -12,
+      x: nx * 13,
+      y: ny * 13,
+      duration: 0.4,
+      ease: 'power2.out',
+      transformPerspective: 800,
+    })
   }
 
   const handleMouseLeave = () => {
-    gsap.to(cardRef.current, { rotateY: 0, rotateX: 0, duration: 0.6, ease: 'power2.out' })
+    gsap.to(cardRef.current, { rotateY: 0, rotateX: 0, x: 0, y: 0, duration: 0.6, ease: 'power2.out' })
   }
 
   return (

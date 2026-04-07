@@ -77,29 +77,6 @@ const Contact = () => {
               Feel free to reach out!
             </p>
 
-            <div className="contact-socials">
-              {socials.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  target={s.href.startsWith('http') ? '_blank' : undefined}
-                  rel="noreferrer"
-                  className="contact-social-link glass-card"
-                  style={{ '--social-color': s.color }}
-                >
-                  <i className={s.icon} style={{ color: s.color }} />
-                  <div>
-                    <p className="contact-social-label">{s.label}</p>
-                    <p className="contact-social-value">
-                      {s.label === 'Email' ? personalInfo.email
-                        : s.label === 'GitHub' ? 'VaidikRokad123'
-                        : 'vaidik-rokad-6bbb56303'}
-                    </p>
-                  </div>
-                  <i className="ri-arrow-right-up-line contact-social-arrow" />
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* RIGHT — Form */}
@@ -115,7 +92,7 @@ const Contact = () => {
                   name="name"
                   value={form.name}
                   onChange={handleChange}
-                  placeholder="John Doe"
+                  placeholder="Vaidik Rokad"
                   required
                 />
               </div>
@@ -128,7 +105,7 @@ const Contact = () => {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="john@example.com"
+                  placeholder="vaidikrokad1245@gmail.com"
                   required
                 />
               </div>
