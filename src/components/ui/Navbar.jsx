@@ -78,7 +78,7 @@ const Navbar = () => {
       </ul>
 
       <a
-        href="/resume.pdf"
+        href={`${import.meta.env.BASE_URL}resume.pdf`}
         download="Vaidik_Rokad_Resume.pdf"
         className="nav-resume-btn"
       >

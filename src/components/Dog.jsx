@@ -10,7 +10,9 @@ const Dog = () => {
   gsap.registerPlugin(useGSAP)
   gsap.registerPlugin(ScrollTrigger)
 
-  const model = useGLTF('/models/dog.drc.glb')
+  const base = import.meta.env.BASE_URL
+
+  const model = useGLTF(`${base}models/dog.drc.glb`)
   const groupRef = useRef()      // outer group: mouse parallax + idle float
   const dogModel = useRef(model) // inner scene: GSAP scroll scale
 
@@ -53,14 +55,14 @@ const Dog = () => {
   }, [actions])
 
   // Textures
-  const [normalMap] = useTexture(['/dog_normals.jpg']).map((t) => {
+  const [normalMap] = useTexture([`${base}dog_normals.jpg`]).map((t) => {
     t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; return t
   })
   const [branchMap, branchNormalMap] = useTexture([
-    '/branches_diffuse.jpeg', '/branches_normals.jpeg',
+    `${base}branches_diffuse.jpeg`, `${base}branches_normals.jpeg`,
   ]).map((t) => { t.colorSpace = THREE.SRGBColorSpace; return t })
 
-  const matcapPaths = Array.from({ length: 20 }, (_, i) => `/matcap/mat-${i + 1}.png`)
+  const matcapPaths = Array.from({ length: 20 }, (_, i) => `${base}matcap/mat-${i + 1}.png`)
   const matcaps = useTexture(matcapPaths).map((t) => {
     t.colorSpace = THREE.SRGBColorSpace; return t
   })

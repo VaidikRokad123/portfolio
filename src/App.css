@@ -54,7 +54,7 @@ html, body, #root {
 
 /* Background image on body — shows through the transparent canvas */
 body {
-  background: url('/background-l.png') center center / cover fixed no-repeat;
+  background: url('/portfolio/background-l.png') center center / cover fixed no-repeat;
   background-color: #05050e; /* fallback */
 }
 /* Dark gradient overlay — reduces bg from overpowering text */
