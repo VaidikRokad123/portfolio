@@ -41,12 +41,6 @@ const Contact = () => {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
-  const socials = [
-    { label: 'GitHub', href: personalInfo.github, icon: 'ri-github-fill', color: '#e2e8f0' },
-    { label: 'LinkedIn', href: personalInfo.linkedin, icon: 'ri-linkedin-fill', color: '#0ea5e9' },
-    { label: 'Email', href: `mailto:${personalInfo.email}`, icon: 'ri-mail-line', color: '#818cf8' },
-  ]
-
   const footerLinks = [
     { label: 'GitHub', href: personalInfo.github, icon: 'ri-github-fill' },
     { label: 'LinkedIn', href: personalInfo.linkedin, icon: 'ri-linkedin-fill' },
@@ -123,7 +117,7 @@ const Contact = () => {
                 />
               </div>
 
-              <button type="submit" className="contact-submit-btn">
+              <button type="submit" className="contact-submit-btn" disabled={submitted}>
                 {submitted ? (
                   <><i className="ri-check-line" /> Message Sent!</>
                 ) : (
@@ -145,7 +139,7 @@ const Contact = () => {
           ))}
         </div>
         <p className="footer-copy">
-          Designed &amp; Built by <span className="gradient-text">Vaidik Rokad</span> · 2024
+          Designed &amp; Built by <span className="gradient-text">Vaidik Rokad</span> · {new Date().getFullYear()}
         </p>
       </div>
     </section>

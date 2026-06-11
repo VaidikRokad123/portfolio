@@ -23,7 +23,7 @@ export const personalInfo = {
   competitive: [
     {
       platform: "LeetCode",
-      rating: "Knight 🏆",
+      rating: "Knight",
       detail: "Top 5% Globally",
       color: "#f59e0b",
       link: "https://leetcode.com/",
@@ -55,7 +55,7 @@ export const projects = [
     tags: ["AI / NLP", "Voice API", "MERN Stack", "Analytics", "ML"],
     color: "#6366f1",
     glow: "rgba(99, 102, 241, 0.35)",
-    icon: "🍽️",
+    icon: "ri-restaurant-2-line",
     highlights: [
       "Chat / Voice / Phone AI Ordering",
       "Revenue Analytics Dashboard",
@@ -73,7 +73,7 @@ export const projects = [
     tags: ["K-Means", "TSP", "Real-time Maps", "Algorithms", "Logistics"],
     color: "#a855f7",
     glow: "rgba(168, 85, 247, 0.35)",
-    icon: "🚀",
+    icon: "ri-route-line",
     highlights: [
       "K-Means Zone Clustering",
       "TSP Route Optimization",
@@ -91,7 +91,7 @@ export const projects = [
     tags: ["JWT Auth", "Multi-currency", "Real-time", "MERN", "Security"],
     color: "#3b82f6",
     glow: "rgba(59, 130, 246, 0.35)",
-    icon: "🏦",
+    icon: "ri-bank-line",
     highlights: [
       "JWT Authentication System",
       "Multi-currency Support",
@@ -131,7 +131,7 @@ export const achievements = [
     subtitle: "Top 5% Globally",
     description:
       "Achieved the Knight badge on LeetCode — placing in the top 5% of competitive programmers worldwide through consistent problem solving.",
-    icon: "🏆",
+    icon: "ri-trophy-line",
     year: "2024",
     color: "#f59e0b",
   },
@@ -140,7 +140,7 @@ export const achievements = [
     subtitle: "Competitive Programmer",
     description:
       "Earned 3-star rating on CodeChef through consistent performance across multiple competitive programming contests.",
-    icon: "⭐",
+    icon: "ri-star-line",
     year: "2024",
     color: "#a855f7",
   },
@@ -149,7 +149,7 @@ export const achievements = [
     subtitle: "Rated Competitor",
     description:
       "Maintained Pupil rank on Codeforces through regular participation in rated rounds and algorithmic problem solving.",
-    icon: "🎯",
+    icon: "ri-focus-2-line",
     year: "2024",
     color: "#3b82f6",
   },
@@ -158,7 +158,7 @@ export const achievements = [
     subtitle: "Nirma University Chapter",
     description:
       "Active Core Committee Member of the Computer Society of India chapter at Nirma University — organizing tech events and workshops.",
-    icon: "💼",
+    icon: "ri-briefcase-line",
     year: "2023–2024",
     color: "#10b981",
   },
@@ -167,7 +167,7 @@ export const achievements = [
     subtitle: "Multiple National Events",
     description:
       "Participated in multiple hackathons, building innovative solutions under tight deadlines with cross-functional teams.",
-    icon: "🚀",
+    icon: "ri-rocket-line",
     year: "2023–2025",
     color: "#f43f5e",
   },

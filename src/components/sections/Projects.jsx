@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -7,14 +7,32 @@ import { projects } from '../../data/portfolio'
 gsap.registerPlugin(ScrollTrigger)
 
 const ProjectModal = ({ project, onClose }) => {
+  const closeRef = useRef(null)
+
+  useEffect(() => {
+    if (!project) return
+    closeRef.current?.focus()
+    const onKeyDown = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [project, onClose])
+
   if (!project) return null
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-panel glass-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>
+      <div
+        className="modal-panel glass-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label={project.title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button ref={closeRef} className="modal-close" onClick={onClose} aria-label="Close project details">
           <i className="ri-close-line" />
         </button>
-        <div className="modal-icon" style={{ background: project.glow }}>{project.icon}</div>
+        <div className="modal-icon" style={{ background: project.glow, color: project.color }}>
+          <i className={project.icon} />
+        </div>
         <h3 className="modal-title" style={{ color: project.color }}>{project.title}</h3>
         <p className="modal-subtitle">{project.subtitle}</p>
         <p className="modal-desc">{project.description}</p>
@@ -81,10 +99,18 @@ const ProjectCard = ({ project, index, onClick }) => {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={() => onClick(project)}
+      role="button"
+      tabIndex={0}
+      aria-label={`View details of ${project.title}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(project) }
+      }}
     >
       <div className="project-card-glow" />
       <div className="project-card-top">
-        <span className="project-icon">{project.icon}</span>
+        <span className="project-icon" style={{ color: project.color, background: `${project.color}1a` }}>
+          <i className={project.icon} />
+        </span>
         <span className="project-index">0{index + 1}</span>
       </div>
       <h3 className="project-title">{project.title}</h3>

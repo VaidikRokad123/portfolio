@@ -17,7 +17,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60)
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -75,6 +75,15 @@ const Navbar = () => {
             </a>
           </li>
         ))}
+        <li className="nav-mobile-resume">
+          <a
+            href={`${import.meta.env.BASE_URL}resume.pdf`}
+            download="Vaidik_Rokad_Resume.pdf"
+            className="nav-link"
+          >
+            Resume <i className="ri-download-line" />
+          </a>
+        </li>
       </ul>
 
       <a
@@ -89,6 +98,7 @@ const Navbar = () => {
         className={`nav-hamburger ${menuOpen ? 'nav-hamburger--open' : ''}`}
         onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
         aria-label="Toggle menu"
+        aria-expanded={menuOpen}
       >
         <span /><span /><span />
       </button>

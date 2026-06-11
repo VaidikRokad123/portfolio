@@ -69,8 +69,8 @@ const Achievements = () => {
               <div className="ach-dot" style={{ background: item.color, boxShadow: `0 0 16px ${item.color}` }} />
               <div className="ach-card glass-card" style={{ '--ach-color': item.color }}>
                 <div className="ach-card-top">
-                  <span className="ach-icon" style={{ background: `${item.color}22` }}>
-                    {item.icon}
+                  <span className="ach-icon" style={{ background: `${item.color}22`, color: item.color }}>
+                    <i className={item.icon} />
                   </span>
                 </div>
                 <h3 className="ach-title" style={{ color: item.color }}>{item.title}</h3>
