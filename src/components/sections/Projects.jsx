@@ -76,6 +76,8 @@ const ProjectCard = ({ project, index, onClick }) => {
     const rect = card.getBoundingClientRect()
     const nx = (e.clientX - rect.left) / rect.width - 0.5
     const ny = (e.clientY - rect.top) / rect.height - 0.5
+    card.style.setProperty('--mx', `${e.clientX - rect.left}px`)
+    card.style.setProperty('--my', `${e.clientY - rect.top}px`)
     gsap.to(card, {
       rotateY: nx * 12,
       rotateX: ny * -12,
