@@ -90,6 +90,7 @@ const Navbar = () => {
         href={`${import.meta.env.BASE_URL}resume.pdf`}
         download="Vaidik_Rokad_Resume.pdf"
         className="nav-resume-btn"
+        data-magnetic
       >
         Resume <i className="ri-download-line" />
       </a>

@@ -1,9 +1,12 @@
 import './App.css'
 import { Canvas } from '@react-three/fiber'
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import Dog from './components/Dog'
 import Navbar from './components/ui/Navbar'
 import ScrollProgress from './components/ui/ScrollProgress'
+import Cursor from './components/ui/Cursor'
+import Preloader from './components/ui/Preloader'
+import Marquee from './components/ui/Marquee'
 import Hero from './components/sections/Hero'
 import About from './components/sections/About'
 import Projects from './components/sections/Projects'
@@ -12,8 +15,15 @@ import Achievements from './components/sections/Achievements'
 import Contact from './components/sections/Contact'
 
 function App() {
+  const [loaded, setLoaded] = useState(false)
+
   return (
     <>
+      {!loaded && <Preloader onComplete={() => setLoaded(true)} />}
+
+      {/* Custom cursor (no-op on touch devices) */}
+      <Cursor />
+
       {/* Drifting aurora glow blobs — behind everything */}
       <div className="bg-aurora" aria-hidden="true">
         <div className="aurora-blob aurora-blob--1" />
@@ -51,7 +61,15 @@ function App() {
 
       {/* Page sections */}
       <main>
-        <Hero />
+        <Hero loaded={loaded} />
+        <Marquee
+          items={[
+            'Full Stack Developer',
+            'Problem Solver',
+            'AI Enthusiast',
+            'Competitive Programmer',
+          ]}
+        />
         <About />
         <Projects />
         <Skills />

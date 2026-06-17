@@ -213,12 +213,14 @@ ul, ol { list-style: none; }
 
 .section-heading {
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 4.2vw, 3.4rem);
+  font-size: clamp(2.6rem, 6.5vw, 5rem);
   font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: -0.015em;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
   color: var(--text);
   margin-bottom: 2.5rem;
+  /* clip-path reveal needs a little breathing room for descenders */
+  padding-bottom: 0.06em;
 }
 
 .section-label {
@@ -232,6 +234,13 @@ ul, ol { list-style: none; }
   color: var(--primary);
   margin-bottom: 1.2rem;
 }
+.section-num {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  opacity: 0.85;
+}
 .section-label-line {
   display: block;
   width: 32px;
@@ -239,6 +248,9 @@ ul, ol { list-style: none; }
   background: var(--primary);
   border-radius: 2px;
 }
+
+/* SplitText line-mask wrapper */
+.split-line { display: block; }
 
 /* ================ CANVAS ================ */
 /* Canvas is transparent — background-l.png lives on body */
@@ -435,14 +447,18 @@ section {
 
 .hero-name {
   font-family: var(--font-display);
-  font-size: clamp(3.5rem, 8vw, 6.5rem);
+  font-size: clamp(3.8rem, 9vw, 7.5rem);
   font-weight: 800;
-  line-height: 0.92;
-  letter-spacing: -0.02em;
+  line-height: 0.9;
+  letter-spacing: -0.035em;
   margin-bottom: 1.4rem;
-  overflow: clip;
-  overflow-clip-margin: 0.15em;
+}
+.hero-name-row {
+  display: block;
+  overflow: hidden;
+  /* keep descenders/glyph shadows from being clipped by the mask */
   padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
 }
 .hero-char {
   display: inline-block;
@@ -1587,4 +1603,195 @@ section {
   .navbar { padding: 1rem 1.2rem; }
   .hero-btns { flex-direction: column; }
   .hero-btn { justify-content: center; text-align: center; }
+}
+
+/* =========================================================
+   PRELOADER — intro counter + masked name + curtain wipe
+   ========================================================= */
+/* Lock scroll while the intro plays */
+html.is-loading,
+html.is-loading body {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: #05040e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+/* faint aurora wash so the loader matches the site mood */
+.preloader::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 20% 20%, rgba(99, 102, 241, 0.18), transparent 70%),
+    radial-gradient(50% 50% at 85% 80%, rgba(168, 85, 247, 0.16), transparent 70%);
+  pointer-events: none;
+}
+.preloader-inner {
+  position: relative;
+  width: min(90vw, 1100px);
+  padding: 0 2rem;
+}
+.preloader-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(3rem, 12vw, 10rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+.preloader-name-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.preloader-name-line {
+  display: inline-block;
+  color: var(--text);
+}
+.preloader-name-line--accent {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.preloader-meta {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.6rem;
+}
+.preloader-tag {
+  font-size: clamp(0.8rem, 1.4vw, 1rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.preloader-count {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3vw, 2.4rem);
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.preloader-count i { font-style: normal; color: var(--text-dim); margin-left: 0.1em; }
+.preloader-bar {
+  margin-top: 1.2rem;
+  height: 2px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.preloader-bar-fill {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--primary), var(--accent), var(--blue));
+}
+
+/* =========================================================
+   CUSTOM CURSOR — dot + lagging ring, hover & magnetic states
+   ========================================================= */
+@media (pointer: fine) {
+  html.has-custom-cursor,
+  html.has-custom-cursor * {
+    cursor: none !important;
+  }
+}
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 100001;
+  visibility: hidden;
+  opacity: 0;
+  /* centering handled by negative margins; GSAP owns the transform (x/y) */
+  will-change: transform;
+}
+.cursor-dot {
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.cursor-ring {
+  width: 38px;
+  height: 38px;
+  margin: -19px 0 0 -19px;
+  border: 1.5px solid rgba(192, 132, 252, 0.6);
+  transition: width 0.25s ease, height 0.25s ease, margin 0.25s ease,
+              background-color 0.25s ease, border-color 0.25s ease;
+}
+.cursor-ring--hover {
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  background: rgba(192, 132, 252, 0.1);
+  border-color: var(--accent);
+}
+.cursor-ring--down {
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+}
+/* Touch devices: never reserve cursor elements */
+@media (pointer: coarse) {
+  .cursor-dot, .cursor-ring { display: none; }
+}
+
+/* =========================================================
+   MARQUEE — infinite scroll-velocity strip
+   ========================================================= */
+.marquee {
+  position: relative;
+  overflow: hidden;
+  padding: 1.6rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: rgba(5, 3, 20, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 2;
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5rem;
+  padding-right: 2.5rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3.2vw, 2.6rem);
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.marquee-item:nth-child(even) {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--text-muted);
+}
+.marquee-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
 }

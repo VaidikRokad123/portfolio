@@ -3,55 +3,57 @@ import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { personalInfo } from '../../data/portfolio'
 
-const Hero = () => {
+const HIDE_TARGETS = [
+  '.hero-tag',
+  '.hero-role-wrapper',
+  '.hero-bio',
+  '.hero-btn',
+  '.hero-socials',
+  '.hero-scroll-hint',
+]
+
+const Hero = ({ loaded = true }) => {
   const containerRef = useRef(null)
   const roleRef = useRef(null)
 
-  // Letter-by-letter entrance animation
-  useGSAP(() => {
-    const tl = gsap.timeline({ delay: 0.2 })
+  const reduced =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    tl.from('.hero-char', {
-      y: 120,
-      opacity: 0,
+  // Hide hero content on first paint so it never shows behind the preloader
+  useGSAP(() => {
+    if (reduced) return
+    gsap.set('.hero-char', { yPercent: 120, opacity: 0 })
+    gsap.set(HIDE_TARGETS, { y: 20, opacity: 0 })
+    gsap.set('.hero-tag', { x: -30, y: 0 })
+  }, { scope: containerRef })
+
+  // Entrance — runs once the preloader hands off
+  useGSAP(() => {
+    if (!loaded) return
+    if (reduced) {
+      gsap.set(['.hero-char', ...HIDE_TARGETS], { clearProps: 'all' })
+      return
+    }
+    const tl = gsap.timeline({ delay: 0.1 })
+    tl.to('.hero-char', {
+      yPercent: 0,
+      opacity: 1,
       duration: 0.9,
       stagger: 0.025,
       ease: 'power4.out',
     })
-      .from('.hero-tag', {
-        x: -30,
-        opacity: 0,
-        duration: 0.6,
-        ease: 'power3.out',
-      }, '-=0.4')
-      .from('.hero-role-wrapper', {
-        y: 24,
-        opacity: 0,
-        duration: 0.6,
-        ease: 'power3.out',
-      }, '-=0.3')
-      .from('.hero-bio', {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        ease: 'power3.out',
-      }, '-=0.3')
-      .from('.hero-btn', {
-        y: 20,
-        opacity: 0,
-        duration: 0.5,
-        stagger: 0.12,
-        ease: 'power3.out',
-      }, '-=0.2')
-      .from('.hero-scroll-hint', {
-        opacity: 0,
-        duration: 0.6,
-        ease: 'power2.out',
-      }, '-=0.1')
-  }, [])
+      .to('.hero-tag', { x: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, '-=0.4')
+      .to('.hero-role-wrapper', { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, '-=0.3')
+      .to('.hero-bio', { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, '-=0.3')
+      .to('.hero-btn', { y: 0, opacity: 1, duration: 0.5, stagger: 0.12, ease: 'power3.out' }, '-=0.2')
+      .to('.hero-socials', { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, '-=0.3')
+      .to('.hero-scroll-hint', { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.1')
+  }, { scope: containerRef, dependencies: [loaded] })
 
-  // Typing effect
+  // Typing effect — starts after the intro completes
   useEffect(() => {
+    if (!loaded) return
     const roles = personalInfo.role
     let roleIndex = 0
     let charIndex = 0
@@ -78,9 +80,9 @@ const Hero = () => {
       timer = setTimeout(type, isDeleting ? 45 : 90)
     }
 
-    const startTimer = setTimeout(type, 1600)
+    const startTimer = setTimeout(type, 600)
     return () => { clearTimeout(startTimer); clearTimeout(timer) }
-  }, [])
+  }, [loaded])
 
   return (
     <section id="hero" ref={containerRef} className="hero-section">
@@ -95,13 +97,16 @@ const Hero = () => {
 
           {/* Animated name */}
           <h1 className="hero-name" aria-label={personalInfo.name}>
-            {personalInfo.firstName.split('').map((char, i) => (
-              <span key={`f${i}`} className="hero-char hero-char--first">{char}</span>
-            ))}
-            <br />
-            {personalInfo.lastName.split('').map((char, i) => (
-              <span key={`l${i}`} className="hero-char hero-char--last">{char}</span>
-            ))}
+            <span className="hero-name-row">
+              {personalInfo.firstName.split('').map((char, i) => (
+                <span key={`f${i}`} className="hero-char hero-char--first">{char}</span>
+              ))}
+            </span>
+            <span className="hero-name-row">
+              {personalInfo.lastName.split('').map((char, i) => (
+                <span key={`l${i}`} className="hero-char hero-char--last">{char}</span>
+              ))}
+            </span>
           </h1>
 
           {/* Typing role text */}
@@ -121,6 +126,7 @@ const Hero = () => {
             <a
               href="#projects"
               className="hero-btn hero-btn--primary"
+              data-magnetic
               onClick={(e) => { e.preventDefault(); document.querySelector('#projects')?.scrollIntoView({ behavior: 'smooth' }) }}
             >
               View My Work <i className="ri-arrow-right-line" />
@@ -128,6 +134,7 @@ const Hero = () => {
             <a
               href="#contact"
               className="hero-btn hero-btn--secondary"
+              data-magnetic
               onClick={(e) => { e.preventDefault(); document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' }) }}
             >
               Get In Touch

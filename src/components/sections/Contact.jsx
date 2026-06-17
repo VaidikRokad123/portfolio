@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { personalInfo } from '../../data/portfolio'
+import { revealHeading } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -12,10 +13,8 @@ const Contact = () => {
   const [submitted, setSubmitted] = useState(false)
 
   useGSAP(() => {
-    gsap.from('.contact-heading', {
-      scrollTrigger: { trigger: '.contact-heading', start: 'top 85%', once: true },
-      y: 50, opacity: 0, duration: 0.8, ease: 'power3.out',
-    })
+    const q = gsap.utils.selector(sectionRef)
+    revealHeading(q('.contact-heading')[0])
     gsap.from('.contact-left', {
       scrollTrigger: { trigger: '.contact-grid', start: 'top 82%', once: true },
       x: -50, opacity: 0, duration: 0.9, ease: 'power3.out',
@@ -23,10 +22,6 @@ const Contact = () => {
     gsap.from('.contact-right', {
       scrollTrigger: { trigger: '.contact-grid', start: 'top 82%', once: true },
       x: 50, opacity: 0, duration: 0.9, ease: 'power3.out',
-    })
-    gsap.from('.contact-social-link', {
-      scrollTrigger: { trigger: '.contact-socials', start: 'top 88%', once: true },
-      y: 25, opacity: 0, duration: 0.45, stagger: 0.1, ease: 'power3.out',
     })
   }, { scope: sectionRef })
 
@@ -57,6 +52,7 @@ const Contact = () => {
           {/* LEFT — heading + intro + socials */}
           <div className="contact-left">
             <div className="section-label">
+              <span className="section-num">05</span>
               <span className="section-label-line" />
               <span>Get In Touch</span>
             </div>
@@ -117,7 +113,7 @@ const Contact = () => {
                 />
               </div>
 
-              <button type="submit" className="contact-submit-btn" disabled={submitted}>
+              <button type="submit" className="contact-submit-btn" data-magnetic disabled={submitted}>
                 {submitted ? (
                   <><i className="ri-check-line" /> Message Sent!</>
                 ) : (

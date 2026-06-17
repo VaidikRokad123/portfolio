@@ -4,6 +4,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { projects } from '../../data/portfolio'
+import { revealHeading, revealLines, parallax } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -59,6 +60,7 @@ const ProjectModal = ({ project, onClose }) => {
           target="_blank"
           rel="noreferrer"
           className="modal-github-btn"
+          data-magnetic
           style={{ background: project.color }}
         >
           <i className="ri-github-fill" /> View on GitHub
@@ -142,21 +144,23 @@ const Projects = () => {
   const [activeProject, setActiveProject] = useState(null)
 
   useGSAP(() => {
-    gsap.from('.projects-heading', {
-      scrollTrigger: { trigger: '.projects-heading', start: 'top 85%' },
-      y: 60, opacity: 0, duration: 0.8, ease: 'power3.out',
-    })
+    const q = gsap.utils.selector(sectionRef)
+    revealHeading(q('.projects-heading')[0])
+    revealLines(q('.projects-subheading')[0])
 
     gsap.from('.project-card', {
       scrollTrigger: { trigger: '.projects-grid', start: 'top 82%', once: true },
-      y: 40, opacity: 0, duration: 0.7, ease: 'power3.out',
+      y: 50, opacity: 0, duration: 0.7, stagger: 0.12, ease: 'power3.out',
     })
+
+    q('.project-index').forEach((el) => parallax(el, -28))
   }, { scope: sectionRef })
 
   return (
     <section id="projects" ref={sectionRef} className="projects-section">
       <div className="section-container">
         <div className="section-label">
+          <span className="section-num">02</span>
           <span className="section-label-line" />
           <span>Featured Work</span>
         </div>

@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
+import { revealHeading } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -96,13 +97,11 @@ const Skills = () => {
   const sectionRef = useRef(null)
 
   useGSAP(() => {
-    gsap.from('.skills-heading', {
-      scrollTrigger: { trigger: '.skills-heading', start: 'top 88%', once: true },
-      y: 40, opacity: 0, duration: 0.7, ease: 'power3.out',
-    })
+    const q = gsap.utils.selector(sectionRef)
+    revealHeading(q('.skills-heading')[0])
     gsap.from('.skill-card', {
       scrollTrigger: { trigger: '.skills-cards-grid', start: 'top 85%', once: true },
-      y: 40, opacity: 0, duration: 0.6, ease: 'power3.out',
+      y: 50, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power3.out',
     })
   }, { scope: sectionRef })
 
@@ -111,6 +110,7 @@ const Skills = () => {
       <div className="section-container">
 
         <div className="section-label">
+          <span className="section-num">03</span>
           <span className="section-label-line" />
           <span>Tech Stack</span>
         </div>

@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { achievements } from '../../data/portfolio'
+import { revealHeading } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -10,10 +11,8 @@ const Achievements = () => {
   const sectionRef = useRef(null)
 
   useGSAP(() => {
-    gsap.from('.ach-heading', {
-      scrollTrigger: { trigger: '.ach-heading', start: 'top 85%' },
-      y: 60, opacity: 0, duration: 0.8, ease: 'power3.out',
-    })
+    const q = gsap.utils.selector(sectionRef)
+    revealHeading(q('.ach-heading')[0])
 
     // Timeline line grows downward
     gsap.from('.ach-timeline-track', {
@@ -50,6 +49,7 @@ const Achievements = () => {
     <section id="achievements" ref={sectionRef} className="ach-section">
       <div className="section-container">
         <div className="section-label">
+          <span className="section-num">04</span>
           <span className="section-label-line" />
           <span>Recognition</span>
         </div>

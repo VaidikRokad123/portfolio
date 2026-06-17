@@ -4,7 +4,11 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+let lenisInstance = null
+
 export function initLenis() {
+  if (lenisInstance) return lenisInstance
+
   const lenis = new Lenis({
     duration: 1.2,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -22,5 +26,11 @@ export function initLenis() {
 
   gsap.ticker.lagSmoothing(0)
 
+  lenisInstance = lenis
+  if (typeof window !== 'undefined') window.__lenis = lenis
   return lenis
+}
+
+export function getLenis() {
+  return lenisInstance
 }
