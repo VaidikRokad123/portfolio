@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -18,7 +19,7 @@ const ProjectModal = ({ project, onClose }) => {
   }, [project, onClose])
 
   if (!project) return null
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal-panel glass-card"
@@ -63,7 +64,8 @@ const ProjectModal = ({ project, onClose }) => {
           <i className="ri-github-fill" /> View on GitHub
         </a>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
