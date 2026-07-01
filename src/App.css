@@ -1190,8 +1190,10 @@ section {
   padding: 2.2rem;
   max-height: min(90vh, 100%);
   overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
   overscroll-behavior: contain;
   scroll-padding-top: 1rem;
   position: relative;
@@ -1203,7 +1205,8 @@ section {
 }
 
 .modal-panel::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: none;
+  /* Chrome/Safari */
 }
 
 .modal-content-grid {
@@ -1828,7 +1831,7 @@ section {
 .contact-footer {
   text-align: center;
   margin-top: 4rem;
-  padding: 2rem 2rem 0.5rem;
+  padding: 2rem 2rem 1.8rem;
   border-top: 1px solid var(--border);
 }
 

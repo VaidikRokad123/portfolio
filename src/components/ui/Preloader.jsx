@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { getLenis } from '../../hooks/useLenis'
 import { personalInfo } from '../../data/portfolio'
+import * as THREE from 'three'
 
 const Preloader = ({ onComplete }) => {
   const rootRef = useRef(null)
@@ -97,12 +98,14 @@ const Preloader = ({ onComplete }) => {
       }
     }
 
-    // 4. Wait for BOTH window load event and Google Fonts to be ready
+    // 4. Wait for window load, Google Fonts, and Three.js WebGL assets (3D model/textures)
     let windowLoaded = document.readyState === 'complete'
     let fontsReady = false
+    let threeJsReady = false
+    let hasThreeJsStarted = false
 
     const checkAllReady = () => {
-      if (windowLoaded && fontsReady) {
+      if (windowLoaded && fontsReady && threeJsReady) {
         completeLoading()
       }
     }
@@ -129,14 +132,35 @@ const Preloader = ({ onComplete }) => {
       checkAllReady()
     })
 
-    // Safety timeout: force loading complete after 6 seconds
+    // Listen for Three.js assets loading
+    THREE.DefaultLoadingManager.onStart = () => {
+      hasThreeJsStarted = true
+      threeJsReady = false
+    }
+
+    THREE.DefaultLoadingManager.onLoad = () => {
+      threeJsReady = true
+      checkAllReady()
+    }
+
+    // If Three.js loading doesn't start in 350ms, assume no WebGL assets are loading
+    const threeJsTimeout = setTimeout(() => {
+      if (!hasThreeJsStarted) {
+        threeJsReady = true
+        checkAllReady()
+      }
+    }, 350)
+
+    // Safety timeout: force loading complete after 8 seconds in case something gets stuck
     const safetyTimeout = setTimeout(() => {
       windowLoaded = true
       fontsReady = true
+      threeJsReady = true
       checkAllReady()
-    }, 6000)
+    }, 8000)
 
     return () => {
+      clearTimeout(threeJsTimeout)
       clearTimeout(safetyTimeout)
     }
   }, [])
