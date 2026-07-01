@@ -48,15 +48,23 @@ const Cursor = () => {
       const magnet = t.closest?.('[data-magnetic]')
       if (magnet) {
         const r = magnet.getBoundingClientRect()
+        const rx = e.clientX - (r.left + r.width / 2)
+        const ry = e.clientY - (r.top + r.height / 2)
+        
+        // Clamp to a maximum displacement of 10px to prevent button drift/overlap
+        const maxDisplacement = 10
+        const targetX = Math.max(-maxDisplacement, Math.min(maxDisplacement, rx * 0.25))
+        const targetY = Math.max(-maxDisplacement, Math.min(maxDisplacement, ry * 0.25))
+
         gsap.to(magnet, {
-          x: (e.clientX - (r.left + r.width / 2)) * 0.3,
-          y: (e.clientY - (r.top + r.height / 2)) * 0.4,
-          duration: 0.4,
-          ease: 'power3.out',
+          x: targetX,
+          y: targetY,
+          duration: 0.35,
+          ease: 'power2.out',
         })
         activeMagnet = magnet
       } else if (activeMagnet) {
-        gsap.to(activeMagnet, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)' })
+        gsap.to(activeMagnet, { x: 0, y: 0, duration: 0.5, ease: 'power2.out' })
         activeMagnet = null
       }
     }

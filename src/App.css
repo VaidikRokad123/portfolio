@@ -1223,6 +1223,13 @@ section {
   flex-direction: column;
 }
 
+@media (max-width: 768px) {
+  .modal-content-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
 @keyframes modalFadeIn {
   from {
     opacity: 0;
