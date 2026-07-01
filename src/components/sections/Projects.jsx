@@ -30,7 +30,7 @@ const ProjectModal = ({ project, onClose }) => {
 
   if (!project) return null
   return createPortal(
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} data-lenis-prevent>
       <div
         className="modal-panel glass-card"
         role="dialog"
