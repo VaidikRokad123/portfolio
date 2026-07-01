@@ -94,8 +94,6 @@ const ProjectCard = ({ project, index, onClick }) => {
     gsap.to(card, {
       rotateY: nx * 12,
       rotateX: ny * -12,
-      x: nx * 13,
-      y: ny * 13,
       duration: 0.4,
       ease: 'power2.out',
       transformPerspective: 800,
@@ -103,7 +101,7 @@ const ProjectCard = ({ project, index, onClick }) => {
   }
 
   const handleMouseLeave = () => {
-    gsap.to(cardRef.current, { rotateY: 0, rotateX: 0, x: 0, y: 0, duration: 0.6, ease: 'power2.out' })
+    gsap.to(cardRef.current, { rotateY: 0, rotateX: 0, duration: 0.6, ease: 'power2.out' })
   }
 
   return (
