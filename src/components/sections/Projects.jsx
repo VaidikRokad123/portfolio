@@ -14,9 +14,18 @@ const ProjectModal = ({ project, onClose }) => {
   useEffect(() => {
     if (!project) return
     closeRef.current?.focus()
+    // Lock body scroll while modal is open
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+    document.body.style.overflow = 'hidden'
+    document.body.style.paddingRight = `${scrollbarWidth}px`
+
     const onKeyDown = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
+    }
   }, [project, onClose])
 
   if (!project) return null

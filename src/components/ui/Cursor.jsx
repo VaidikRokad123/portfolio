@@ -26,7 +26,7 @@ const Cursor = () => {
     let visible = false
     let activeMagnet = null
 
-    const onMove = (e) => {
+    const showCursor = (e) => {
       if (!visible) {
         visible = true
         gsap.to([dot, ring], { autoAlpha: 1, duration: 0.3 })
@@ -35,6 +35,10 @@ const Cursor = () => {
       yDot(e.clientY)
       xRing(e.clientX)
       yRing(e.clientY)
+    }
+
+    const onMove = (e) => {
+      showCursor(e)
 
       const t = e.target
       const hovering = t.closest?.(HOVER_SELECTOR)
@@ -57,20 +61,30 @@ const Cursor = () => {
       }
     }
 
+    // Re-show cursor immediately when mouse re-enters the window
+    const onEnter = (e) => {
+      showCursor(e)
+    }
+
     const onDown = () => ring.classList.add('cursor-ring--down')
     const onUp = () => ring.classList.remove('cursor-ring--down')
-    const onLeave = () => gsap.to([dot, ring], { autoAlpha: 0, duration: 0.2 })
+    const onLeave = () => {
+      visible = false
+      gsap.to([dot, ring], { autoAlpha: 0, duration: 0.2 })
+    }
 
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mousedown', onDown)
     window.addEventListener('mouseup', onUp)
     document.addEventListener('mouseleave', onLeave)
+    document.addEventListener('mouseenter', onEnter)
 
     return () => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('mouseup', onUp)
       document.removeEventListener('mouseleave', onLeave)
+      document.removeEventListener('mouseenter', onEnter)
       document.documentElement.classList.remove('has-custom-cursor')
     }
   }, [])
