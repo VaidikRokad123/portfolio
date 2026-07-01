@@ -41,39 +41,49 @@ const ProjectModal = ({ project, onClose }) => {
         <button ref={closeRef} className="modal-close" onClick={onClose} aria-label="Close project details">
           <i className="ri-close-line" />
         </button>
-        <div className="modal-icon" style={{ background: project.glow, color: project.color }}>
-          <i className={project.icon} />
+
+        <div className="modal-content-grid">
+          <div className="modal-content-left">
+            <div className="modal-icon" style={{ background: project.glow, color: project.color }}>
+              <i className={project.icon} />
+            </div>
+            <h3 className="modal-title" style={{ color: project.color }}>{project.title}</h3>
+            <p className="modal-subtitle">{project.subtitle}</p>
+            <p className="modal-desc">{project.description}</p>
+            
+            <a
+              href={project.github}
+              target="_blank"
+              rel="noreferrer"
+              className="modal-github-btn"
+              data-magnetic
+              style={{ background: project.color }}
+            >
+              <i className="ri-github-fill" /> View on GitHub
+            </a>
+          </div>
+
+          <div className="modal-content-right">
+            <div className="modal-highlights">
+              <p className="modal-highlights-label">Key Features</p>
+              <ul>
+                {project.highlights.map((h) => (
+                  <li key={h}>
+                    <i className="ri-checkbox-circle-line" style={{ color: project.color }} /> {h}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="modal-tags">
+              {project.tags.map((tag) => (
+                <span key={tag} className="skill-tag" style={{ borderColor: project.color, color: project.color }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-        <h3 className="modal-title" style={{ color: project.color }}>{project.title}</h3>
-        <p className="modal-subtitle">{project.subtitle}</p>
-        <p className="modal-desc">{project.description}</p>
-        <div className="modal-highlights">
-          <p className="modal-highlights-label">Key Features</p>
-          <ul>
-            {project.highlights.map((h) => (
-              <li key={h}>
-                <i className="ri-checkbox-circle-line" style={{ color: project.color }} /> {h}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="modal-tags">
-          {project.tags.map((tag) => (
-            <span key={tag} className="skill-tag" style={{ borderColor: project.color, color: project.color }}>
-              {tag}
-            </span>
-          ))}
-        </div>
-        <a
-          href={project.github}
-          target="_blank"
-          rel="noreferrer"
-          className="modal-github-btn"
-          data-magnetic
-          style={{ background: project.color }}
-        >
-          <i className="ri-github-fill" /> View on GitHub
-        </a>
       </div>
     </div>,
     document.body,
