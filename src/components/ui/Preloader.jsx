@@ -66,9 +66,10 @@ const Preloader = ({ onComplete }) => {
       onUpdate: () => {
         updateProgress()
         
-        // If it reaches 85% but assets/fonts are still loading, pause/hold the tween
+        // If it reaches 85% but assets/fonts are still loading, slow the progress to a crawl
+        // This keeps the counter moving (e.g. 85, 86, 87...) so it never freezes on a number
         if (counter.val >= 85 && !assetsLoaded) {
-          mainTween.pause()
+          mainTween.timeScale(0.06)
         }
       },
       onComplete: runExitAnimation
