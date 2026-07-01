@@ -11,38 +11,26 @@ const Marquee = ({ items, direction = 1 }) => {
 
   useGSAP(() => {
     const track = trackRef.current
-    const loop = gsap.to(track, {
-      xPercent: -50,
-      duration: 24,
-      ease: 'none',
-      repeat: -1,
-    })
-    loop.timeScale(direction)
+    const wrap = wrapRef.current
+    if (!track || !wrap) return
 
-    let resetCall
-    const st = ScrollTrigger.create({
-      trigger: wrapRef.current,
-      onUpdate: (self) => {
-        const v = self.getVelocity()
-        gsap.to(track, {
-          skewX: gsap.utils.clamp(-10, 10, v / -120),
-          duration: 0.3,
-          overwrite: true,
-        })
-        loop.timeScale(direction * (1 + gsap.utils.clamp(0, 3, Math.abs(v) / 250)))
-        resetCall?.kill()
-        resetCall = gsap.delayedCall(0.2, () => {
-          gsap.to(track, { skewX: 0, duration: 0.5, ease: 'power2.out', overwrite: true })
-          loop.timeScale(direction)
-        })
-      },
-    })
+    // Animate from 0 to -35% (or vice versa) to scroll left/right dynamically as you scroll up/down
+    const startX = direction > 0 ? 0 : -35
+    const endX = direction > 0 ? -35 : 0
 
-    return () => {
-      st.kill()
-      loop.kill()
-      resetCall?.kill()
-    }
+    gsap.fromTo(track,
+      { xPercent: startX },
+      {
+        xPercent: endX,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: wrap,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1.2, // Gives it a very premium, smooth lagging effect
+        }
+      }
+    )
   }, { scope: wrapRef })
 
   const row = [...items, ...items]
