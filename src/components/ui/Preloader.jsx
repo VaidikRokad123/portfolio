@@ -39,47 +39,62 @@ const Preloader = ({ onComplete }) => {
     })
       .from('.preloader-meta', { opacity: 0, y: 12, duration: 0.5 }, '-=0.5')
 
-    // 2. Start a fake loading progress that slows down at 85%
+    // 2. Start a smooth loading progress to 100% over 2.5 seconds
     const counter = { val: 0 }
-    const progressTween = gsap.to(counter, {
-      val: 85,
-      duration: 8,
-      ease: 'power1.out',
+    
+    const updateProgress = () => {
+      if (countRef.current) countRef.current.textContent = Math.round(counter.val)
+      gsap.set('.preloader-bar-fill', { scaleX: counter.val / 100 })
+    }
+
+    const runExitAnimation = () => {
+      const exitTl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+      exitTl.to('.preloader-inner', { opacity: 0, y: -20, duration: 0.4, ease: 'power2.in' })
+        .to(rootRef.current, {
+          yPercent: -100,
+          duration: 0.8,
+          ease: 'power4.inOut',
+          onComplete: finish
+        }, '-=0.15')
+    }
+
+    const mainTween = gsap.to(counter, {
+      val: 100,
+      duration: 2.5,
+      ease: 'power2.inOut',
       onUpdate: () => {
-        if (countRef.current) countRef.current.textContent = Math.round(counter.val)
-        gsap.set('.preloader-bar-fill', { scaleX: counter.val / 100 })
-      }
+        updateProgress()
+        
+        // If it reaches 85% but assets/fonts are still loading, pause/hold the tween
+        if (counter.val >= 85 && !assetsLoaded) {
+          mainTween.pause()
+        }
+      },
+      onComplete: runExitAnimation
     })
 
-    // 3. Define function to finish loading once assets are ready
+    // 3. Define function to finish loading smoothly once everything is ready
+    let assetsLoaded = false
     let completed = false
+    
     const completeLoading = () => {
       if (completed) return
       completed = true
       
-      progressTween.kill()
+      assetsLoaded = true
       
-      // Fast tween to 100%
-      gsap.to(counter, {
-        val: 100,
-        duration: 0.4,
-        ease: 'power2.out',
-        onUpdate: () => {
-          if (countRef.current) countRef.current.textContent = Math.round(counter.val)
-          gsap.set('.preloader-bar-fill', { scaleX: 1 })
-        },
-        onComplete: () => {
-          // Exit timeline
-          const exitTl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-          exitTl.to('.preloader-inner', { opacity: 0, y: -20, duration: 0.4, ease: 'power2.in' })
-            .to(rootRef.current, {
-              yPercent: -100,
-              duration: 0.8,
-              ease: 'power4.inOut',
-              onComplete: finish
-            }, '-=0.15')
-        }
-      })
+      // If the main tween is already running and hasn't reached 85%, let it finish normally.
+      // If it reached 85% and is paused (or close), smoothly animate the rest to 100% over 0.8s.
+      if (counter.val >= 82) {
+        mainTween.kill()
+        gsap.to(counter, {
+          val: 100,
+          duration: 0.8,
+          ease: 'power2.out',
+          onUpdate: updateProgress,
+          onComplete: runExitAnimation
+        })
+      }
     }
 
     // 4. Wait for BOTH window load event and Google Fonts to be ready
@@ -109,12 +124,12 @@ const Preloader = ({ onComplete }) => {
       fontsReady = true
       checkAllReady()
     }).catch(() => {
-      // Fallback just in case fonts fail to load or timeout
+      // Fallback in case of timeout/failure
       fontsReady = true
       checkAllReady()
     })
 
-    // Safety timeout: force load complete after 6 seconds in case something gets stuck
+    // Safety timeout: force loading complete after 6 seconds
     const safetyTimeout = setTimeout(() => {
       windowLoaded = true
       fontsReady = true
