@@ -1,22 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Gradient for V (Sky Blue to Indigo) -->
+    <linearGradient id="gV" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+    
+    <!-- Gradient for R (Indigo to Lavender Purple) -->
+    <linearGradient id="gR" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#818cf8" />
       <stop offset="100%" stop-color="#c084fc" />
     </linearGradient>
   </defs>
-  <!-- Background -->
-  <rect width="100" height="100" rx="24" fill="#08061c" />
-  <rect x="2" y="2" width="96" height="96" rx="22" fill="none" stroke="url(#g)" stroke-width="4" opacity="0.6"/>
+
+  <!-- Geometric VR monogram -->
   
-  <!-- Interconnected custom V and R monogram -->
-  <!-- V's right stroke slants up and transitions directly into R's vertical stem -->
-  <path d="M 22,30 L 40,70 L 52,30 C 68,30 74,47 52,50 L 70,70" 
+  <!-- V: Left diagonal slanting down, then right diagonal slanting up to the shared apex -->
+  <path d="M 14,25 L 36,75 L 58,25" 
         fill="none" 
-        stroke="url(#g)" 
-        stroke-width="9" 
+        stroke="url(#gV)" 
+        stroke-width="11" 
         stroke-linecap="round" 
         stroke-linejoin="round" />
-  <!-- Bottom stem extension of R to ground the character -->
-  <line x1="52" y1="50" x2="52" y2="70" stroke="url(#g)" stroke-width="9" stroke-linecap="round" />
+
+  <!-- R's vertical stem extending straight down from the shared apex at x=58 -->
+  <path d="M 58,25 L 58,75" 
+        fill="none" 
+        stroke="url(#gR)" 
+        stroke-width="11" 
+        stroke-linecap="round" />
+
+  <!-- R's Loop: Curves out to x=88 and down to y=54, merging into V's diagonal at (45.2, 54) -->
+  <path d="M 58,25 C 88,25 88,54 45.2,54" 
+        fill="none" 
+        stroke="url(#gR)" 
+        stroke-width="11" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+
+  <!-- R's Leg with custom curved tail starting from the diagonal intersection point (45.2, 54) -->
+  <path d="M 45.2,54 C 58,54 62,73 76,75" 
+        fill="none" 
+        stroke="url(#gR)" 
+        stroke-width="11" 
+        stroke-linecap="round" />
 </svg>
