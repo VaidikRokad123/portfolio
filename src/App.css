@@ -1185,13 +1185,15 @@ section {
 }
 
 .modal-panel {
-  max-width: 820px;
+  max-width: 500px;
   width: 100%;
-  padding: 2.2rem;
+  padding: 2rem;
   max-height: min(90vh, 100%);
   overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
   overscroll-behavior: contain;
   scroll-padding-top: 1rem;
   position: relative;
@@ -1203,31 +1205,34 @@ section {
 }
 
 .modal-panel::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: none;
+  /* Chrome/Safari */
 }
 
-.modal-content-grid {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 2.2rem;
-  align-items: start;
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 0.2rem;
+  padding-right: 2rem;
 }
 
-.modal-content-left {
+.modal-header-info {
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
-.modal-content-right {
+.modal-divider {
+  height: 1px;
+  width: 100%;
+  background: var(--border);
+  margin: 1.2rem 0;
+}
+
+.modal-body-content {
   display: flex;
   flex-direction: column;
-}
-
-@media (max-width: 768px) {
-  .modal-content-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
 }
 
 @keyframes modalFadeIn {
@@ -1288,11 +1293,20 @@ section {
   margin-bottom: 1.2rem;
 }
 
+.modal-header-row .modal-icon {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
 .modal-title {
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 0.4rem;
+}
+
+.modal-header-row .modal-title {
+  margin-bottom: 0.2rem;
 }
 
 .modal-subtitle {
@@ -1303,16 +1317,20 @@ section {
   margin-bottom: 1.2rem;
 }
 
+.modal-header-row .modal-subtitle {
+  margin-bottom: 0;
+}
+
 .modal-desc {
   font-size: 0.92rem;
   color: var(--text-muted);
   line-height: 1.75;
   font-weight: 300;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
 }
 
 .modal-highlights {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
 }
 
 .modal-highlights-label {
@@ -1341,7 +1359,7 @@ section {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1.8rem;
+  margin-bottom: 1.4rem;
 }
 
 .modal-github-btn {
@@ -1641,7 +1659,7 @@ section {
 
 /* ================ CONTACT SECTION ================ */
 .contact-section {
-  padding: 6rem 0 3rem;
+  padding: 6rem 0 0;
   background: rgba(5, 3, 20, 0.52);
   border-top: 1px solid var(--border);
   backdrop-filter: blur(2px);
@@ -1815,7 +1833,7 @@ section {
 .contact-footer {
   text-align: center;
   margin-top: 4rem;
-  padding: 2rem 2rem 1.5rem;
+  padding: 2rem 2rem 0.5rem;
   border-top: 1px solid var(--border);
 }
 
@@ -2004,7 +2022,7 @@ section {
   }
 
   .contact-section {
-    padding: 4.5rem 0 3rem;
+    padding: 4.5rem 0 0;
   }
 
   /* Lighter ambient effects on mobile GPUs */
