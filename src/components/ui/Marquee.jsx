@@ -14,73 +14,23 @@ const Marquee = ({ items, direction = 1 }) => {
     const wrap = wrapRef.current
     if (!track || !wrap) return
 
-    // 1. Create the base infinite scrolling loop (perfectly smooth, linear ease)
-    const loop = gsap.to(track, {
-      xPercent: -50,
-      duration: 22,
-      ease: 'none',
-      repeat: -1,
-    })
-    loop.timeScale(direction)
+    // Animate from 0 to -35% (or vice versa) to scroll left/right dynamically as you scroll up/down
+    const startX = direction > 0 ? 0 : -35
+    const endX = direction > 0 ? -35 : 0
 
-    // 2. Listen to scroll events to dynamically accelerate the loop speed
-    const st = ScrollTrigger.create({
-      trigger: wrap,
-      start: 'top bottom',
-      end: 'bottom top',
-      onUpdate: (self) => {
-        const v = Math.abs(self.getVelocity())
-        // Smoothly accelerate speed multiplier up to a maximum of 4.5x
-        const speedMultiplier = 1 + gsap.utils.clamp(0, 3.5, v / 180)
-        const targetSpeed = direction * speedMultiplier
-
-        // Smoothly animate the timeScale to avoid any speed jumps
-        gsap.to(loop, {
-          timeScale: targetSpeed,
-          duration: 0.35,
-          ease: 'power1.out',
-          overwrite: 'auto',
-        })
-      },
-      onToggle: (self) => {
-        // Pause loop when offscreen to optimize performance
-        if (self.isActive) {
-          loop.play()
-        } else {
-          loop.pause()
+    gsap.fromTo(track,
+      { xPercent: startX },
+      {
+        xPercent: endX,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: wrap,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1.2, // Gives it a very premium, smooth lagging effect
         }
       }
-    })
-
-    // 3. Smoothly decelerate back to normal speed when scroll stops
-    const scrollStopListener = () => {
-      gsap.to(loop, {
-        timeScale: direction,
-        duration: 0.5,
-        ease: 'power2.out',
-        overwrite: 'auto',
-      })
-    }
-    window.addEventListener('scrollend', scrollStopListener)
-
-    // Safety interval to catch stop even if scrollend event is not triggered
-    const interval = setInterval(() => {
-      if (!ScrollTrigger.isScrolling()) {
-        gsap.to(loop, {
-          timeScale: direction,
-          duration: 0.5,
-          ease: 'power2.out',
-          overwrite: 'auto',
-        })
-      }
-    }, 300)
-
-    return () => {
-      st.kill()
-      loop.kill()
-      window.removeEventListener('scrollend', scrollStopListener)
-      clearInterval(interval)
-    }
+    )
   }, { scope: wrapRef })
 
   const row = [...items, ...items]
