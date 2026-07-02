@@ -273,6 +273,24 @@ ol {
   padding-bottom: 0.06em;
 }
 
+.contact-word {
+  display: inline-block;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.serif-italic {
+  font-family: 'Playfair Display', 'Didot', 'Georgia', serif;
+  font-style: italic;
+  font-weight: 500;
+  text-transform: none;
+  background: linear-gradient(135deg, var(--primary), var(--accent), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  padding-right: 0.08em; /* offset to prevent italics glyph clipping */
+}
+
 .section-label {
   display: flex;
   align-items: center;

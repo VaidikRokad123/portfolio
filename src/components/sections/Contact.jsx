@@ -14,7 +14,19 @@ const Contact = () => {
 
   useGSAP(() => {
     const q = gsap.utils.selector(sectionRef)
-    revealHeading(q('.contact-heading')[0])
+    
+    // Smooth 3D stagger reveal for the contact heading words
+    gsap.from(q('.contact-heading .contact-word'), {
+      scrollTrigger: { trigger: '.contact-heading', start: 'top 85%', once: true },
+      y: 40,
+      opacity: 0,
+      rotateX: -15,
+      scale: 0.95,
+      duration: 1.1,
+      stagger: 0.15,
+      ease: 'power4.out',
+    })
+
     gsap.from('.contact-left', {
       scrollTrigger: { trigger: '.contact-grid', start: 'top 82%', once: true },
       x: -50, opacity: 0, duration: 0.9, ease: 'power3.out',
@@ -58,7 +70,9 @@ const Contact = () => {
             </div>
 
             <h2 className="contact-heading section-heading">
-              Let&apos;s <span className="gradient-text">Build</span> Something
+              <span className="contact-word word-1">Let&apos;s</span>{' '}
+              <span className="contact-word word-2 serif-italic">Build</span>{' '}
+              <span className="contact-word word-3">Something</span>
             </h2>
 
             <p className="contact-intro">

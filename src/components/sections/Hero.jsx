@@ -23,7 +23,13 @@ const Hero = ({ loaded = true }) => {
   // Hide hero content on first paint so it never shows behind the preloader
   useGSAP(() => {
     if (reduced) return
-    gsap.set('.hero-char', { yPercent: 120, opacity: 0 })
+    gsap.set('.hero-char', { 
+      yPercent: 70, 
+      opacity: 0,
+      filter: 'blur(8px)',
+      rotateX: -30,
+      transformOrigin: '50% 100% -20px'
+    })
     gsap.set(HIDE_TARGETS, { y: 20, opacity: 0 })
     gsap.set('.hero-tag', { x: -30, y: 0 })
   }, { scope: containerRef })
@@ -35,12 +41,18 @@ const Hero = ({ loaded = true }) => {
       gsap.set(['.hero-char', ...HIDE_TARGETS], { clearProps: 'all' })
       return
     }
+    
+    // Set 3D perspective on name containers for rotateX
+    gsap.set('.hero-name-row', { perspective: 1000 })
+
     const tl = gsap.timeline({ delay: 0.1 })
     tl.to('.hero-char', {
       yPercent: 0,
       opacity: 1,
-      duration: 0.9,
-      stagger: 0.025,
+      filter: 'blur(0px)',
+      rotateX: 0,
+      duration: 1.1,
+      stagger: 0.03,
       ease: 'power4.out',
     })
       .to('.hero-tag', { x: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, '-=0.4')
