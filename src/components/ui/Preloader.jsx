@@ -40,12 +40,13 @@ const Preloader = ({ onComplete }) => {
     })
       .from('.preloader-meta', { opacity: 0, y: 12, duration: 0.5 }, '-=0.5')
 
-    // 2. Start a smooth loading progress to 100% over 2.5 seconds
-    const counter = { val: 0 }
+    // 2. Setup progress state and display updating function
+    const progressState = { val: 0 }
     
-    const updateProgress = () => {
-      if (countRef.current) countRef.current.textContent = Math.round(counter.val)
-      gsap.set('.preloader-bar-fill', { scaleX: counter.val / 100 })
+    const updateProgressDisplay = () => {
+      const rounded = Math.round(progressState.val)
+      if (countRef.current) countRef.current.textContent = rounded
+      gsap.set('.preloader-bar-fill', { scaleX: progressState.val / 100 })
     }
 
     const runExitAnimation = () => {
@@ -59,106 +60,98 @@ const Preloader = ({ onComplete }) => {
         }, '-=0.15')
     }
 
-    const mainTween = gsap.to(counter, {
-      val: 100,
-      duration: 2.5,
-      ease: 'power2.inOut',
-      onUpdate: () => {
-        updateProgress()
-        
-        // If it reaches 85% but assets/fonts are still loading, slow the progress to a crawl
-        // This keeps the counter moving (e.g. 85, 86, 87...) so it never freezes on a number
-        if (counter.val >= 85 && !assetsLoaded) {
-          mainTween.timeScale(0.06)
-        }
-      },
-      onComplete: runExitAnimation
-    })
-
-    // 3. Define function to finish loading smoothly once everything is ready
-    let assetsLoaded = false
-    let completed = false
-    
-    const completeLoading = () => {
-      if (completed) return
-      completed = true
-      
-      assetsLoaded = true
-      
-      // If the main tween is already running and hasn't reached 85%, let it finish normally.
-      // If it reached 85% and is paused (or close), smoothly animate the rest to 100% over 0.8s.
-      if (counter.val >= 82) {
-        mainTween.kill()
-        gsap.to(counter, {
-          val: 100,
-          duration: 0.8,
-          ease: 'power2.out',
-          onUpdate: updateProgress,
-          onComplete: runExitAnimation
-        })
-      }
-    }
-
-    // 4. Wait for window load, Google Fonts, and Three.js WebGL assets (3D model/textures)
+    // 3. Keep track of actual loaded fractions
     let windowLoaded = document.readyState === 'complete'
     let fontsReady = false
-    let threeJsReady = false
+    let threeJsProgress = 0
     let hasThreeJsStarted = false
+    let completed = false
 
-    const checkAllReady = () => {
-      if (windowLoaded && fontsReady && threeJsReady) {
-        completeLoading()
-      }
+    const calculateCurrentProgress = () => {
+      const winPart = windowLoaded ? 15 : 0
+      const fontPart = fontsReady ? 15 : 0
+      const threePart = threeJsProgress // Ranges 0 to 70
+      return Math.min(100, winPart + fontPart + threePart)
+    }
+
+    const checkAndAnimateProgress = () => {
+      if (completed) return
+      
+      const targetVal = calculateCurrentProgress()
+      
+      // Smoothly animate the progress number and bar to the true target value
+      gsap.to(progressState, {
+        val: targetVal,
+        duration: 0.5,
+        ease: 'power2.out',
+        onUpdate: updateProgressDisplay,
+        onComplete: () => {
+          if (targetVal === 100 && !completed) {
+            completed = true
+            runExitAnimation()
+          }
+        },
+        overwrite: 'auto'
+      })
     }
 
     // Listen for window load
     if (windowLoaded) {
-      checkAllReady()
+      checkAndAnimateProgress()
     } else {
       const handleWindowLoad = () => {
         windowLoaded = true
-        checkAllReady()
+        checkAndAnimateProgress()
         window.removeEventListener('load', handleWindowLoad)
       }
       window.addEventListener('load', handleWindowLoad)
     }
 
-    // Listen for fonts ready
+    // Listen for Google fonts and web fonts ready
     document.fonts.ready.then(() => {
       fontsReady = true
-      checkAllReady()
+      checkAndAnimateProgress()
     }).catch(() => {
-      // Fallback in case of timeout/failure
+      // Fallback in case of font load timeout/error
       fontsReady = true
-      checkAllReady()
+      checkAndAnimateProgress()
     })
 
-    // Listen for Three.js assets loading
+    // Listen for Three.js asset loading managers (gltf dog models & textures)
     THREE.DefaultLoadingManager.onStart = () => {
       hasThreeJsStarted = true
-      threeJsReady = false
+      threeJsProgress = 0
+      checkAndAnimateProgress()
+    }
+
+    THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+      hasThreeJsStarted = true
+      if (itemsTotal > 0) {
+        threeJsProgress = (itemsLoaded / itemsTotal) * 70
+      }
+      checkAndAnimateProgress()
     }
 
     THREE.DefaultLoadingManager.onLoad = () => {
-      threeJsReady = true
-      checkAllReady()
+      threeJsProgress = 70
+      checkAndAnimateProgress()
     }
 
-    // If Three.js loading doesn't start in 350ms, assume no WebGL assets are loading
+    // Fallback: If Three.js doesn't trigger onStart within 400ms (already loaded / cached / no model), auto-complete R3F portion
     const threeJsTimeout = setTimeout(() => {
       if (!hasThreeJsStarted) {
-        threeJsReady = true
-        checkAllReady()
+        threeJsProgress = 70
+        checkAndAnimateProgress()
       }
-    }, 350)
+    }, 400)
 
-    // Safety timeout: force loading complete after 8 seconds in case something gets stuck
+    // Safety timeout: force preloader completion after 12 seconds in case a CDN asset/font gets stuck
     const safetyTimeout = setTimeout(() => {
       windowLoaded = true
       fontsReady = true
-      threeJsReady = true
-      checkAllReady()
-    }, 8000)
+      threeJsProgress = 70
+      checkAndAnimateProgress()
+    }, 12000)
 
     return () => {
       clearTimeout(threeJsTimeout)
