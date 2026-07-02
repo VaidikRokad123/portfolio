@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { achievements } from '../../data/portfolio'
-import { revealHeading } from '../../utils/reveal'
+import { revealTypewriter } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -12,7 +12,7 @@ const Achievements = () => {
 
   useGSAP(() => {
     const q = gsap.utils.selector(sectionRef)
-    revealHeading(q('.ach-heading')[0])
+    revealTypewriter(q('.ach-heading')[0])
 
     // Timeline line grows downward
     gsap.from('.ach-timeline-track', {

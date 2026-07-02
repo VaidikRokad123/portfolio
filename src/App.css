@@ -233,6 +233,15 @@ ol {
   animation: gradient-shimmer 6s linear infinite;
 }
 
+/* Ensure character/word spans inside gradient text inherit the gradient clip correctly */
+.gradient-text span {
+  background: inherit !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  display: inline-block;
+}
+
 @keyframes gradient-shimmer {
   to {
     background-position: 250% center;

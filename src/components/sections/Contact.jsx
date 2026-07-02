@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { personalInfo } from '../../data/portfolio'
-import { revealHeading } from '../../utils/reveal'
+import { revealWordCascade } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -15,17 +15,7 @@ const Contact = () => {
   useGSAP(() => {
     const q = gsap.utils.selector(sectionRef)
     
-    // Smooth 3D stagger reveal for the contact heading words
-    gsap.from(q('.contact-heading .contact-word'), {
-      scrollTrigger: { trigger: '.contact-heading', start: 'top 85%', once: true },
-      y: 40,
-      opacity: 0,
-      rotateX: -15,
-      scale: 0.95,
-      duration: 1.1,
-      stagger: 0.15,
-      ease: 'power4.out',
-    })
+    revealWordCascade(q('.contact-heading')[0])
 
     gsap.from('.contact-left', {
       scrollTrigger: { trigger: '.contact-grid', start: 'top 82%', once: true },

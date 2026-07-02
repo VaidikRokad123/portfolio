@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
-import { revealHeading } from '../../utils/reveal'
+import { revealCharsStagger } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -98,7 +98,7 @@ const Skills = () => {
 
   useGSAP(() => {
     const q = gsap.utils.selector(sectionRef)
-    revealHeading(q('.skills-heading')[0])
+    revealCharsStagger(q('.skills-heading')[0])
     gsap.from('.skill-card', {
       scrollTrigger: { trigger: '.skills-cards-grid', start: 'top 85%', once: true },
       y: 50, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power3.out',

@@ -4,7 +4,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { projects } from '../../data/portfolio'
-import { revealHeading, revealLines, parallax } from '../../utils/reveal'
+import { revealDepartures, revealLines, parallax } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -162,7 +162,7 @@ const Projects = () => {
 
   useGSAP(() => {
     const q = gsap.utils.selector(sectionRef)
-    revealHeading(q('.projects-heading')[0])
+    revealDepartures(q('.projects-heading')[0])
     revealLines(q('.projects-subheading')[0])
 
     gsap.from('.project-card', {

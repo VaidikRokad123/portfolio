@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import { personalInfo } from '../../data/portfolio'
-import { revealHeading, revealLines } from '../../utils/reveal'
+import { revealBouncy, revealLines } from '../../utils/reveal'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -39,7 +39,7 @@ const About = () => {
 
   useGSAP(() => {
     const q = gsap.utils.selector(sectionRef)
-    revealHeading(q('.about-heading')[0])
+    revealBouncy(q('.about-heading')[0])
     revealLines(q('.about-bio')[0])
     gsap.from('.about-edu-card', {
       scrollTrigger: { trigger: '.about-edu-card', start: 'top 85%', once: true },
