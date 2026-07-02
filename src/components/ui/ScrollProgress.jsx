@@ -1,14 +1,18 @@
 import { useEffect, useRef } from 'react'
 
-const ScrollProgress = () => {
+const ScrollProgress = ({ isPageLoaded = false }) => {
   const barRef = useRef(null)
 
   useEffect(() => {
+    if (!isPageLoaded) return
+
     let raf = null
     const update = () => {
-      const doc = document.documentElement
-      const max = doc.scrollHeight - doc.clientHeight
-      const p = max > 0 ? doc.scrollTop / max : 0
+      const scrollY = window.scrollY
+      const scrollHeight = document.documentElement.scrollHeight
+      const clientHeight = window.innerHeight
+      const max = scrollHeight - clientHeight
+      const p = max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0
       if (barRef.current) barRef.current.style.transform = `scaleX(${p})`
       raf = null
     }
@@ -23,7 +27,9 @@ const ScrollProgress = () => {
       window.removeEventListener('resize', onScroll)
       if (raf !== null) cancelAnimationFrame(raf)
     }
-  }, [])
+  }, [isPageLoaded])
+
+  if (!isPageLoaded) return null
 
   return (
     <div className="scroll-progress" aria-hidden="true">

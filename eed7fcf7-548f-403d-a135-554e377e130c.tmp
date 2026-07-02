@@ -1,0 +1,1249 @@
+# Internship Daily Report
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS – Full-Stack HRMS Development
+**Duration:** 4 May 2026 – 3 July 2026
+**Intern Name:** ___________
+**Supervisor:** ___________
+**Department:** Engineering
+
+---
+
+**Date:** Monday, 04 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today marked the first day of my internship at Saeculum Solutions. I was formally introduced to the team and given an overview of the Stasis HRMS project — a comprehensive Human Resource Management System built to handle employee lifecycle management, attendance, leave, payroll, hiring, and more. My supervisor explained the business context: Saeculum Solutions uses the system internally and is developing it as a product offering. The core stack is Node.js 20 with Express on the backend, React 18 on the frontend (two separate portals — an HR portal and an Employee portal), MongoDB with Mongoose for the database, and Docker for containerized deployment.
+
+I spent the morning setting up my development environment. I installed Node.js 20 LTS, MongoDB Community Edition, Docker Desktop, and cloned the three repositories: `hrms-backend`, `hrms-frontend`, and `hrms-frontend-employee`. The backend uses ES Modules (`"type": "module"` in package.json), which means all imports must use the `import`/`export` syntax instead of CommonJS `require()`/`module.exports`. This was my first exposure to a production Node.js project using native ES Modules, and I had to be careful about how dynamic imports work with `await import(...)`.
+
+In the afternoon, I ran the backend locally using Docker. The project includes a `rebuild.ps1` script that handles the Docker build, container removal, and container start in sequence — I was told to always use this script rather than running the three Docker commands manually to avoid misconfiguration. I verified that the backend started correctly on port 5000, and the React dev servers hot-reloaded on ports 3000 (HR portal) and 3001 (Employee portal) automatically without needing a rebuild.
+
+By end of day, I had read through the top-level `server.js` file in the backend. This file is the application entry point — it imports all route modules, mounts them under `/api`, seeds RBAC roles on every boot using `seedRbac.js`, and starts the scheduled job workers. I noted that routes are organized by domain (employees, attendance, leave, payroll, etc.) and protected by a `protect` middleware that validates JWT tokens. Public routes (like the job application form and onboarding forms) are mounted outside the `protect` chain.
+
+## Learning Outcomes
+- Understood the project architecture: three separate repositories with clearly defined responsibilities
+- Learned that the backend exclusively uses ES Modules, not CommonJS — all files use `import`/`export`
+- Understood Docker-based deployment and the purpose of the `rebuild.ps1` convenience script
+- Got an overview of how route protection works via JWT middleware in Express
+
+## Challenges & Solutions
+Setting up the `.env` files with the correct MongoDB URI, JWT secret, and Google credentials took about an hour because the sample `.env.example` was partially outdated. My supervisor walked me through the correct values for local development.
+
+---
+
+**Date:** Tuesday, 05 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Continuing from yesterday's environment setup, I spent today doing a deeper read of the project's folder structure and understanding how the codebase is organized. The backend has a clear separation of concerns: `controllers/` contain all route handlers with no business logic in the route files themselves, `models/` hold all Mongoose schemas, `routes/` define Express routers, `utils/` contain pure helper functions, `services/` contain complex integrations (PDF, Drive, signature), `middleware/` contain request-level guards, and `jobs/` contain scheduled background tasks.
+
+I studied `config/db.js` to understand how MongoDB is connected using Mongoose. The connection string comes from the `MONGO_URI` environment variable. I then looked at `config/constants.js`, which defines all the enum values used throughout the project — department names, designations, employment types, and so on. This is important because Mongoose schemas reference these enums, and any new value must be added here before it can be used in a schema.
+
+The most interesting file I read today was `config/permissions.js`, which defines the entire RBAC (Role-Based Access Control) permission tree. The tree is a nested JavaScript object where each leaf node represents a granular permission (like `{ view: true, create: true, modify: true, delete: true }`). This tree structure allows HR roles to have fine-grained control — for example, a role can have `employees.view` without having `employees.modify`. I traced how `checkPermission("employees", "view")` in the middleware uses this tree to validate access.
+
+In the afternoon, I looked at `config/seedRbac.js`, which runs on every server start. It reads the permissions tree and seeds three system roles: `admin` (wildcard `*` access), `sr_hr`, and `employee`. The admin role gets all permissions auto-generated from the tree, which means adding a new permission node automatically extends the admin's access without manual updates. This was an elegant design decision I found very practical.
+
+## Learning Outcomes
+- Understood the backend folder structure and separation of concerns between controllers, models, routes, utils, and services
+- Learned how the RBAC permission tree is structured and how `checkPermission` middleware evaluates access
+- Understood that `seedRbac.js` auto-generates admin permissions from the tree on every boot
+- Recognized the importance of `config/constants.js` as the single source of truth for all enum values
+
+## Challenges & Solutions
+I initially confused `authorize.js` (the legacy flat-check middleware) with `checkPermission.js` (the current nested-check middleware). My supervisor clarified that `authorize` is deprecated and all new routes should use `checkPermission`. No major blockers otherwise.
+
+---
+
+**Date:** Wednesday, 06 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I focused on understanding the authentication system end to end. I read through `controllers/authController.js`, which handles login, JWT issuance, and portal routing. When a user logs in, the controller checks which portal they should be directed to based on their role's `isEmployeePortal` flag — roles with `isEmployeePortal: true` are sent to the Employee portal (port 3001) and cannot log into the HR portal (port 3000), and vice versa. This dual-portal architecture ensures that regular employees never have access to HR-sensitive operations.
+
+I studied the `UserModel.js` schema to understand how users are stored. Each user has a reference to a `RoleModel` document (not the role name embedded) — this is important because when roles are updated, all users with that role automatically get the updated permissions without needing individual updates. The `protect` middleware in `middleware/auth.js` decodes the JWT, fetches the full user document with the populated role (including the permissions tree), and attaches it to `req.user` for all subsequent middleware and controllers to use.
+
+In the afternoon, I explored the React `AuthContext.js` in the HR portal frontend. This context wraps the entire app and exposes two main utilities: `can(path, action)` for permission checks and `hasPerm(path)` for checking if a permission path exists at all. These functions mirror the backend's `checkPermission` logic, ensuring the frontend hides UI elements the user cannot access anyway — this is defensive UI, not a security boundary. The real security is always enforced on the backend.
+
+I also looked at `ProtectedRoute.js`, which is a React Router wrapper. Every authenticated route in `routeConfig.js` has a `permissionPath` and `action` property. `ProtectedRoute` calls `can(permissionPath, action)` and redirects to `/no-access` if the check fails. This means navigating directly to a URL the user doesn't have permission for shows a proper access-denied page rather than crashing.
+
+## Learning Outcomes
+- Understood the dual-portal architecture and how `isEmployeePortal` flag controls access
+- Learned how JWT is issued, stored, and validated via the `protect` middleware, which attaches `req.user`
+- Understood that frontend permission checks (`can()`) are UX guards — backend middleware is the real enforcer
+- Traced the flow from login → JWT issuance → `protect` middleware → `checkPermission` in route handler
+
+## Challenges & Solutions
+Understanding the difference between the HR portal's `AuthContext.js` and the Employee portal's `AuthContext.js` (they are separate files in separate repos but share the same logic) was initially confusing. No major blockers today.
+
+---
+
+**Date:** Thursday, 07 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I studied the `EmployeeModel.js` in detail — the central data model of the entire system. The employee document is composed of multiple sub-schemas defined in the `models/employee/` directory: `personalFields.js`, `contactFields.js`, `familyFields.js`, `educationFields.js`, `bankPayrollFields.js`, `professionalFields.js`, and `metaFields.js`. This decomposed approach keeps the main schema file readable and allows sub-schemas to be updated independently. Each sub-schema is imported and spread into the main schema definition.
+
+The `EmployeeModel` also contains two important embedded arrays: `onboardingTimeline` and `careerTimeline`. The `onboardingTimeline` tracks every onboarding step (offer letter sent, policy docs signed, background verification, etc.) with completion status and timestamps. The `careerTimeline` stores every role change, salary revision, or department transfer with the effective date and who made the change — this provides a full audit trail of an employee's history at the company.
+
+I read through `managementController.js` next, which handles all employee CRUD operations. The `createEmployee` handler generates a unique employee code using the `CounterModel` (an auto-incrementing MongoDB counter pattern) and the `empCodeUtils.js` helper. The `updateEmployee` handler includes an important hierarchy check — it uses the role's `hierarchyLevel` field to ensure a lower-level HR user cannot edit a higher-level user's record. For example, a custom HR role at level 30 cannot edit the profile of a user with a role at level 50.
+
+In the afternoon, I looked at the `Employees.js` React page in the HR portal frontend. This page renders a searchable, filterable table of all employees. It uses two custom hooks: `useEmployeeFilters` (which manages filter state for department, designation, status, etc.) and `FilterDrawer`/`FilterTags` components for the filter UI. The data is fetched via Axios with a base URL of `http://localhost:5000/api` and the JWT token attached in the request header via an Axios interceptor set up in the app's initialization.
+
+## Learning Outcomes
+- Understood the decomposed sub-schema pattern for the `EmployeeModel` — clean, maintainable, and independently updatable
+- Learned about the `CounterModel` auto-increment pattern for generating unique employee codes
+- Understood the `hierarchyLevel` enforcement that prevents lower-authority HR users from modifying higher-authority profiles
+- Learned how Axios interceptors are used in the frontend to attach JWT tokens automatically to every request
+
+## Challenges & Solutions
+The `bankPayrollFields.js` sub-schema has many optional fields with complex validation. Understanding which fields are required vs optional for the initial employee creation flow took time reading through the schema. No code blockers today.
+
+---
+
+**Date:** Friday, 08 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+To close out the first week, I spent today consolidating my understanding of the RBAC system by tracing a complete request flow from the frontend through the backend. I picked a specific action — viewing an employee record — and followed every step: the React page calls `can("employees", "view")` before rendering the link, the `ProtectedRoute` wrapper checks the same before allowing navigation, the Axios call includes the Bearer token, the `protect` middleware validates the JWT and fetches `req.user`, and finally `checkPermission("employees", "view")` verifies the user's role has the `view` flag set on the `employees` node of the permission tree.
+
+I then read `RoleModel.js` to understand how roles store permissions. Roles have a `permissions` field of type `Mixed` (a freeform object in Mongoose), which stores the actual permission tree subset granted to that role. The `seedRbac.js` generates these programmatically for system roles, while the `RolesPermissions.js` HR admin page provides a UI for creating custom roles. I noticed that every role mutation is recorded in `RoleAuditLogModel.js`, keeping a tamper-evident history of who changed what permission and when.
+
+In the afternoon, I explored the `navConfig.js` file in the frontend. This is an array of navigation item definitions, each with a `key`, `path`, `label`, `icon` (Tabler Icons class), and `perm` (a `"module:action"` string). The `Navbar.js` component reads this config, checks each item's `perm` using `can()`, and only renders items the user has access to. Groups of items are rendered as collapsible accordions, and the active section auto-expands based on the current route. This dynamic nav means adding a new feature only requires adding an entry in `navConfig.js` and `routeConfig.js` — no changes to `Navbar.js` itself.
+
+I ended the day writing a short summary document for myself mapping the full permission flow, which helped me solidify my understanding. My first week gave me a solid foundation in the project architecture, authentication, RBAC, and the employee data model — all of which underpin every other feature in the system.
+
+## Learning Outcomes
+- Traced a complete end-to-end permission check from React UI → Axios → JWT validation → `checkPermission` middleware
+- Understood how `RoleModel` stores permission subsets as a `Mixed` Mongoose field
+- Learned that `RoleAuditLogModel` maintains a tamper-evident history of all role changes
+- Understood `navConfig.js` as the single configuration file driving the entire navigation tree
+
+## Challenges & Solutions
+No major blockers today. The first week was primarily exploratory, and having solid documentation in `CLAUDE.md` made orientation much faster than expected.
+
+---
+
+**Date:** Monday, 11 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Starting the second week, I was assigned my first real implementation task: improve the `EmployeeDetail.js` page to correctly display the employee's career timeline. The career timeline is stored as an embedded array in the `EmployeeModel` under `careerTimeline`, with each entry containing the event type (joining, promotion, transfer, salary revision, etc.), the effective date, the old and new values, and the user who made the change.
+
+I began by reading the existing `EmployeeDetail.js` file thoroughly. The page already had tabs for Profile, Documents, Attendance, and Leave — but the career timeline section was not rendering dates in a consistent format. I traced the data flow: the frontend calls `GET /api/employees/:empCode` which is handled by a function in `managementController.js` that returns the full employee document. The career timeline entries come back as raw ISO date strings from MongoDB, and the frontend was inconsistently formatting some dates and leaving others as raw ISO strings.
+
+I implemented a fix using the `dateFormatter.js` utility from the backend's `utils/` folder — but since this is a frontend concern, I wrote an equivalent `formatDate(isoString)` helper directly in the component using JavaScript's `Intl.DateTimeFormat` API with `{ day: 'numeric', month: 'long', year: 'numeric' }` options for a consistent human-readable output like "15 March 2026". This is a pure frontend utility, so no backend changes were needed.
+
+In the afternoon, I also studied the `AddEmployee.js` page and its associated CSS to understand how the multi-section form is structured. The form is divided into collapsible sections matching the sub-schema groups (Personal, Contact, Family, Education, Bank/Payroll, Professional). Each section uses the `.field-input`, `.field-select`, and `.field-label` CSS classes from the shared design system to ensure visual consistency. I noted that required fields are marked with an asterisk and validated client-side before submission.
+
+## Learning Outcomes
+- Understood the career timeline data model and how embedded arrays are used in Mongoose for audit trails
+- Learned to use `Intl.DateTimeFormat` for locale-aware date formatting in the frontend
+- Understood the multi-section form pattern in `AddEmployee.js` and how it maps to the employee sub-schemas
+- Reinforced understanding of the shared CSS design system classes (`.field-input`, `.field-select`, etc.)
+
+## Challenges & Solutions
+I initially tried to format dates using `new Date().toLocaleDateString()` which produces inconsistent output across browsers. Switching to `Intl.DateTimeFormat` with explicit options resolved the inconsistency.
+
+---
+
+**Date:** Tuesday, 12 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I continued working on `EmployeeDetail.js` and focused on the Documents tab. The documents tab shows generated documents (payslips, letters, certificates) linked to the employee. Each document record is stored in `EmployeeDocumentModel.js` with a reference to the employee code, the document type, a title, a Google Drive file ID, and the date generated. The frontend makes a call to `GET /api/documents/employee/:empCode` to fetch these records.
+
+I noticed the documents tab was missing a section for displaying electronic signatures — a feature that would be added later. I left a comment in the code marking where the signature viewer should go (this turned out to be useful weeks later when implementing the e-signature feature). Beyond that, I studied how the Drive file download works: the frontend calls a protected proxy route `GET /api/drive/file/:fileId` which pipes the Google Drive stream through the Express server to the browser. This proxy pattern is necessary because Drive files use a service account and are not publicly accessible — the backend acts as an authenticated intermediary.
+
+I also started reading `managementController.js` more thoroughly, specifically the `getEmployeeByCode` handler which is the most-called endpoint on the HR portal. This handler performs a careful population of related data: it populates the user's role from `UserModel`, gets the current leave balance from `LeaveBalanceModel`, and computes some summary statistics. I learned that Mongoose's `.lean()` method is used extensively here for performance — `.lean()` returns plain JavaScript objects instead of Mongoose documents, which is faster for read-only operations where you don't need to call `.save()`.
+
+In the afternoon I read through `utils/employeeCompat.js` and `utils/employeeFilters.js`. The compat file handles backward-compatibility transformations for older employee documents that might have fields stored in a legacy format. The filters file provides reusable query-building logic for filtering employees by department, designation, status, and date ranges — used both in `managementController.js` and `analyticsController.js`.
+
+## Learning Outcomes
+- Understood the Google Drive proxy download pattern — the backend authenticates with Drive's service account and pipes the file to the client
+- Learned about Mongoose's `.lean()` optimization for read-only queries
+- Understood `employeeCompat.js` as a backward-compatibility layer for legacy data formats
+- Learned how reusable query filters are extracted into utility functions to avoid duplication across controllers
+
+## Challenges & Solutions
+Understanding `.lean()` and when to use it vs. full Mongoose documents required reading the Mongoose documentation. The key insight: use `.lean()` when you only need to read data; use full documents when you need to call `.save()` or use virtual fields.
+
+---
+
+**Date:** Wednesday, 13 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I was assigned to understand and extend the HR portal's navigation system. I started with `routeConfig.js`, which is an array of route definitions each containing `path`, `component`, `protected`, `permissionPath`, and `action`. This array is consumed by `App.js` which maps each entry to either a `<Route>` (for public routes) or a `<ProtectedRoute>` component (for authenticated routes). Adding a new page requires only adding an entry here — the routing, code-splitting, and permission gating are all handled automatically.
+
+I then studied `navConfig.js` in detail. The nav config is hierarchical — top-level items can be either direct links or accordion groups containing child items. Each item has a `perm` string in the format `"module:action"` which the `Navbar.js` component parses to call `can(module, action)`. If all children of an accordion group fail the permission check, the entire group is hidden — this prevents empty accordion sections appearing in the sidebar for restricted roles.
+
+I made a small contribution today: I added proper `aria-current="page"` attributes to the active nav link in `Navbar.js`. This improves accessibility for screen reader users and also makes the CSS active-state selector more semantic. The change was small but required understanding how React Router's `useLocation()` hook is used to determine the current path and compare it against each nav item's `path` property.
+
+I also read `hooks/usePermission.js` to understand how permission checks work in components that aren't route-level — for example, conditional rendering of buttons inside a page. The `usePermission` hook simply calls `useContext(AuthContext)` and returns the `can` function. The `Can.js` component is a thin wrapper around this hook that renders its children only if the permission check passes — useful for declarative permission gating in JSX without verbose ternary expressions.
+
+## Learning Outcomes
+- Understood how `routeConfig.js` drives the entire routing and permission-gating system with a data-driven approach
+- Learned the difference between `navConfig.js` (sidebar navigation) and `routeConfig.js` (actual React Router routes)
+- Understood the `Can.js` component pattern for declarative permission checks in JSX
+- Applied `aria-current` for accessible active state in the navigation
+
+## Challenges & Solutions
+Finding where to add the `aria-current` attribute was initially confusing because the active state logic was split across CSS classes and JavaScript comparisons. Tracing the `useLocation()` usage clarified it quickly.
+
+---
+
+**Date:** Thursday, 14 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I dived deeper into the RBAC system by examining `RolesPermissions.js` in the HR admin section. This is one of the most complex pages in the HR portal — it allows HR admins to create custom roles, assign granular permissions using a tree of checkboxes, and manage user assignments. The permission tree UI is generated dynamically from the same `permissions.js` config used on the backend, ensuring the frontend tree always reflects the backend's actual permission structure.
+
+I studied how the `RolesPermissions.js` page constructs the permission tree UI. It imports a flattened representation of the permissions config and renders each path as a row with checkboxes for each available action (`view`, `create`, `modify`, `delete`). When a checkbox is toggled, it updates a local state object representing the role's permissions. On save, this object is sent to `PUT /api/rbac/roles/:id` which stores it in the `RoleModel.permissions` Mixed field.
+
+I then read `rbacController.js` in the backend to understand the role creation, update, and deletion flows. The controller has special protection for system roles — roles with `isSystem: true` in the database cannot be deleted or have their name changed. The admin role additionally cannot have its permissions modified at all (it always gets the wildcard `*` set on server start). Every role change goes through `writeAudit()` from `utils/audit.js`, which creates a record in `AuditLogModel` and `RoleAuditLogModel` with the before/after state, the acting user, and a timestamp.
+
+In the afternoon I read `middleware/activeGuard.js` which is the `checkActiveEmployee()` middleware. This middleware is applied to employee-portal routes and checks that the logged-in employee's account is still active in the system — if the employee has been offboarded or their account disabled, all API calls from the employee portal return a 403. This is a defense-in-depth measure: even if a JWT hasn't expired yet, a recently disabled employee cannot access their portal.
+
+## Learning Outcomes
+- Understood how the `RolesPermissions.js` page dynamically generates the permission tree UI from the backend's config
+- Learned how `writeAudit()` creates immutable audit records for every sensitive change
+- Understood the `activeGuard` middleware as a defense-in-depth measure independent of JWT expiry
+- Learned that system roles have immutability protections enforced at the controller level
+
+## Challenges & Solutions
+The Mixed field type in Mongoose (used for the permissions object) requires calling `.markModified("permissions")` before `.save()` — otherwise Mongoose doesn't detect the change and skips the database update. This was a subtle gotcha I found by reading the Mongoose docs.
+
+---
+
+**Date:** Friday, 15 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+On the last day of my second week, I wrapped up my exploration of the employee management and RBAC modules by reading the `Users.js` and `EmployeeAccounts.js` admin pages. `Users.js` manages the `UserModel` records (login accounts), while `EmployeeAccounts.js` provides a bulk view that links employees to their user accounts. An employee can exist without a user account (if they haven't been given system access yet), but every user account must be linked to an employee.
+
+I also read `adminController.js` which handles user management operations: creating users, resetting passwords, enabling/disabling accounts, and assigning roles. A key detail here is password hashing — passwords are hashed using `bcryptjs` with a salt factor of 10 before being stored. The `resetPassword` handler generates a temporary password, emails it to the user (via `emailUtils.js`), and sets a flag that forces a password change on first login. The `SetPassword.js` frontend page handles the forced password change flow.
+
+I then spent the afternoon doing a code review pass on all the changes I had made during the week. I checked that every component I had touched used the established CSS classes (`.field-input`, `.field-label`, `.btn-primary`, etc.) from the shared design system in `main.css`, verified there were no hardcoded colors, and confirmed that all user-facing strings were in sentence case (per the `STASIS_CONTENT_GUIDE.md` rules). This self-review habit was encouraged by my supervisor as a way to catch style inconsistencies before they accumulate.
+
+I committed all my changes and wrote a brief summary of the two weeks' work for my supervisor. The first two weeks gave me a thorough understanding of the system's foundation — authentication, RBAC, employee data model, and navigation — which I would build on in the weeks ahead as I moved into more domain-specific modules.
+
+## Learning Outcomes
+- Understood the relationship between `UserModel` (login accounts) and `EmployeeModel` (HR records) — they are separate but linked
+- Learned about bcrypt password hashing and the forced-password-change flow for new accounts
+- Practiced a self-review checklist: CSS class consistency, no hardcoded colors, sentence-case copy
+- Consolidated two weeks of learning into a summary for my supervisor
+
+## Challenges & Solutions
+No major blockers. The self-review process uncovered one instance where I had used an inline `color: #333` instead of the `--color-text` CSS variable — a small but important consistency fix.
+
+---
+
+**Date:** Monday, 18 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Week three began with an introduction to the attendance system — one of the most technically complex modules in Stasis HRMS. My supervisor walked me through the business requirements: the system needs to classify each working day as present (full day), half day, absent, or late based on the employee's punch records, while applying configurable thresholds. The key design constraint is that all thresholds must come from a policy configuration stored in the database, not be hardcoded — the same codebase must work for companies with different working hour expectations.
+
+I spent the morning reading `utils/attendanceUtils/statusEngine.js`, which contains the `computeDayStatus` function — the heart of the attendance system. This function takes a set of punch records for a day and a policy configuration object, and returns the classified status. The computation follows a specific sequence: first it calculates total worked minutes (the time between first punch-in and last punch-out), then it computes break minutes (time between punch-out and punch-in pairs), then it calculates "effective productive minutes" by subtracting a penalty for breaks shorter than the minimum break duration (`minBreakMinutes`, default 30 minutes). A break shorter than 30 minutes charges the shortfall — so if an employee took only a 10-minute break, they are charged 20 minutes of penalty, reflecting that a full productive workday includes adequate rest.
+
+I studied all the threshold values defined in the policy: `fullDayThresholdHours` (default 8), `halfDayThresholdHours` (default 4), `dayCompletionGraceMinutes` (default 5, so 7h55m still counts as full), `lateThresholdTime` (default 10:35), and `lateArrivalMonthlyLimit` (default 3 late days before further late days auto-downgrade to half-day). Understanding these thresholds and how they interact was critical before I could work on the punch-in/out system.
+
+In the afternoon, I read `utils/attendanceUtils/policy.js` which provides the `getAttendancePolicy()` function — it fetches the `attendance_policy` key from `SystemSettingModel` and merges it with the default values. This ensures that even if a company hasn't configured every threshold, the system falls back to sensible defaults. The policy object is passed into `computeDayStatus` rather than fetched inside it, keeping the engine a pure function — easier to test and reason about.
+
+## Learning Outcomes
+- Understood the attendance status classification logic: full day, half day, absent, late
+- Learned the "effective productive minutes" formula: `worked − max(0, minBreakMinutes − breakMinutes)`
+- Understood why thresholds are stored in `SystemSettingModel` rather than hardcoded — multi-company flexibility
+- Learned the pure-function design of `computeDayStatus` — it takes policy as input, making it independently testable
+
+## Challenges & Solutions
+The break penalty formula was initially confusing — it took a careful re-reading to understand that a short break results in a deduction from productive time, not an addition. Drawing a timeline diagram on paper helped clarify the logic.
+
+---
+
+**Date:** Tuesday, 19 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Continuing from yesterday's study of the attendance engine, today I focused on the punch-in/out system. I read `AttendanceRecordModel.js` which stores one document per employee per day. Each record contains the employee code, the date key (an integer in YYYYMMDD format — a clever choice for efficient range queries), an array of punch events (each with a type of `in` or `out` and a timestamp), and the computed status fields (status, worked minutes, effective productive minutes, late flag, etc.). The YYYYMMDD integer format means range queries like "all records in May 2026" become simple comparisons: `dateKey >= 20260501 && dateKey <= 20260531` — faster and more intuitive than ISO date range queries.
+
+I then read `attendanceController.js`, specifically the `addPunch` handler. When an employee punches in or out, this handler validates the punch type (must alternate — can't punch in twice), appends the punch event to the record's array, and immediately recomputes the status using `computeDayStatus` to give the employee a real-time view of their attendance status. This live recomputation on every punch is a deliberate design choice: HR and the employee can both see the current status throughout the day rather than waiting for the nightly finalization job.
+
+I studied the `PunchWidget.js` component in the employee portal — a prominent card on the Dashboard that shows the current status and has a single "Punch In" / "Punch Out" button. The widget uses a 30-second polling interval to fetch the live stats from `GET /api/emp-portal/attendance/today`, which returns the punch history and a `stats` block computed by `buildLiveStats`. The `stats` block includes remaining target minutes, current break range warnings, late count, and provisional status — giving the employee actionable feedback ("You have been clocked in for 5h 20m. 2h 35m remaining to complete your working day.").
+
+I also looked at `empPortalController.js` which handles all `/api/emp-portal/*` routes. A key design principle here: every handler in this controller only accesses data for the currently authenticated employee (`req.user.emp_code`) — there are no permission checks in these routes because the scope is already scoped to the caller. This keeps the employee portal simple and secure without needing a complex RBAC tree.
+
+## Learning Outcomes
+- Understood the YYYYMMDD integer date key pattern for efficient MongoDB range queries
+- Learned how punch events are stored as an embedded array and status is recomputed live on each punch
+- Understood the `buildLiveStats` function that provides real-time feedback to employees via the PunchWidget
+- Learned that `empPortalController.js` is scoped to `req.user.emp_code` — no RBAC needed, security by design
+
+## Challenges & Solutions
+I initially wondered why the system uses a YYYYMMDD integer instead of a proper Date field with date-only indexes. The answer is practical: sorting and range-querying integers is marginally faster, and the format is human-readable in raw MongoDB queries during debugging.
+
+---
+
+**Date:** Wednesday, 20 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I studied the attendance daily finalization job — the nightly process that locks in each day's attendance status. I read `jobs/attendanceDailyJob.js` which is scheduled to run at midnight IST via the `node-cron` library. The job fetches all employees who are expected to be present (active, not on approved leave), finds their attendance records for the previous day, and calls `finalizeDay.js` for each one.
+
+I then read `utils/attendanceUtils/finalizeDay.js` carefully. The `finalizeDay` function is the production counterpart to `computeDayStatus` — while `computeDayStatus` is used for live/provisional computation, `finalizeDay` does the authoritative end-of-day computation with additional context: it counts how many late days the employee has had in the current calendar month (using `countLateDaysInMonth`), applies the late-to-half-day downgrade rule if the monthly limit has been exceeded, and persists the finalized status to the `AttendanceRecordModel`. A finalized record has a `finalized: true` flag that prevents re-computation by the live endpoint.
+
+The monthly late limit rule is particularly important: `CLAUDE.md` explains that the policy allows 3 late arrivals per month by default. On the 4th late day and beyond, the day is automatically downgraded from "late-present" to "half day" (`flags.lateHalfDay = true`). The `finalizeDay` function receives the pre-computed `lateDaysThisMonthBefore` count as a parameter (computed by `countLateDaysInMonth` called from outside) rather than querying the database itself — this keeps the function pure and testable.
+
+I also read about the `autoAbsentEnabled` policy flag. When enabled, employees whose effective productive minutes fall below the half-day threshold are automatically marked absent — this eliminates the need for HR to manually mark absences. When disabled, such records are left as "insufficient hours" pending HR review. The finalization job respects this flag when computing the final status.
+
+## Learning Outcomes
+- Understood the distinction between provisional (live) status and finalized (end-of-day) status
+- Learned the monthly late-to-half-day downgrade rule and how `countLateDaysInMonth` provides context
+- Understood `autoAbsentEnabled` — the policy that automates absence marking below half-day threshold
+- Learned how `node-cron` schedules the nightly finalization job with timezone-aware IST scheduling
+
+## Challenges & Solutions
+Understanding the `lateDaysThisMonthBefore` parameter flow required tracing from `attendanceDailyJob.js` through `finalizeDay.js`. Once I drew the call chain, the separation of concerns (counting vs. applying) became clear.
+
+---
+
+**Date:** Thursday, 21 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I focused on the attendance settings system. I read through `SystemSettingModel.js` which is a generic key-value store for system-wide configuration. The attendance policy is stored under the key `attendance_policy` as a nested object. I also studied how HR edits this policy through the frontend — there is an `AttendanceSettings.js` page (in the Policy Settings section) that renders form inputs for each threshold, saves changes via `POST /api/admin/settings/attendance_policy`, and immediately shows a success confirmation.
+
+I also explored `utils/attendanceUtils/workingDayUtils.js`, a utility that computes working days while respecting the company's configured week-off days and public holidays from `HolidayModel`. The key function `subtractWorkingDays(dateKey, n)` walks backward from a given YYYYMMDD date key, skipping weekends and holidays, to find the date that is exactly `n` working days before. This is used throughout the system for computing reminder dates — for example, "remind HR 2 working days before the employee's first day."
+
+I read `HolidayModel.js` which stores public holidays as date keys with names. The company can manage holidays through the HR portal, and `workingDayUtils.js` fetches the holiday list to skip them during working-day computations. The integration between the holiday list and attendance calculations means adding a new public holiday automatically adjusts all future date computations without code changes.
+
+In the afternoon, I studied how `buildLiveStats` constructs the live stats object for the `PunchWidget`. This function is called in real time and assembles a rich stats block: the employee's target working hours, how many hours they've worked so far, break status (whether they're currently on a break, whether the break is too short or too long), the late count for the month, a provisional status (what the status would be if they clocked out now), and an array of warning strings. Warnings include things like "Your break is shorter than the minimum 30 minutes — you may be charged a break shortfall." This proactive feedback system is one of the features I found most user-friendly in the entire product.
+
+## Learning Outcomes
+- Understood `SystemSettingModel` as a generic key-value config store used across multiple modules
+- Learned the `subtractWorkingDays` function and how it integrates holiday data for accurate working-day math
+- Understood `HolidayModel` as the single source of truth for public holidays affecting date calculations
+- Learned how `buildLiveStats` provides proactive, actionable feedback to employees in real time
+
+## Challenges & Solutions
+I initially didn't understand why holiday checks were needed in `subtractWorkingDays` for the attendance module specifically — I thought holidays would be handled by the leave module. The connection is: a "reminder 2 working days before" should not fire on a public holiday, so both systems need the holiday list.
+
+---
+
+**Date:** Friday, 22 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+To close out the third week, I studied the `Attendance.js` HR portal page and the overall user experience of the attendance module for HR users. The page has multiple tabs: Today's Overview (live punch statuses across all employees), Monthly Summary (a grid view of all employees' attendance across a selected month), Individual (detailed view for one employee with punch timeline), and Settings (the policy editor). This multi-tab architecture allows HR to quickly check daily status, run monthly reports, and edit policy without leaving the page.
+
+I also read the `regularizationController.js` file to understand the upcoming regularization feature I would be working on next week. Regularization allows employees to request corrections to their punch records — for example, if they forgot to punch out, they can submit a regularization request with the correct times and a reason. I noted the two key policy fields: `regularizationWindowDays` (how many working days back an employee can submit a correction) and `maxRegularizationsPerMonth` (the soft monthly cap).
+
+I spent the afternoon reading about how attendance integrates with the leave module. When HR approves a leave request, the system must recompute the attendance status for the approved leave dates — a present or absent record for a day should become "on leave" after approval. This integration is handled by a function in `leaveController.js` that, after saving the leave approval, fetches the attendance records for the leave period and calls `finalizeDay` with leave context. This ensures attendance reports remain consistent with approved leaves.
+
+I also reviewed the `Regularization.js` page on the HR portal to understand the approval UI. HR sees a table of pending regularization requests with the employee's proposed punch times, the reason, and buttons to approve or reject with a note. The page is permission-gated by `attendance.regularization:modify`.
+
+## Learning Outcomes
+- Understood the multi-tab structure of the `Attendance.js` HR page and its real-time vs. historical views
+- Got a preview of regularization: employee-submitted punch corrections with working-day window and monthly cap
+- Understood the attendance-leave integration: leave approval triggers attendance recomputation
+- Reinforced understanding of how attendance, leave, and policy settings are tightly interconnected
+
+## Challenges & Solutions
+No major blockers today. The week was primarily study-heavy with the attendance engine, which is the most algorithmically dense part of the codebase.
+
+---
+
+**Date:** Monday, 25 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Week four began with implementing the regularization request feature on the employee portal side. I was tasked with building the `Regularization.js` page in `hrms-frontend-employee/src/pages/`. Employees can submit punch correction requests from this page — they select a date, provide their proposed punch times (in/out pairs), and add a reason. The submission goes to `POST /api/regularization/request`.
+
+I started by reading `RegularizationRequestModel.js`. Each regularization request stores the employee code, the date of the punch correction, the original punches (before correction), the proposed punches, the reason text, the submission timestamp, and the approval status (`pending` / `approved` / `rejected`). Approved requests also store who approved them and when, along with any HR note. Rejected requests require a note.
+
+The most important validation rule I had to implement is the `regularizationWindowDays` check — the request can only be submitted for dates within the last N working days (where N comes from the attendance policy). I implemented this in the frontend by fetching the policy and computing the earliest allowed date using the `subtractWorkingDays` equivalent logic in JavaScript. If the selected date is outside the window, the submit button is disabled with a descriptive message: "You can only submit corrections for dates within the last 3 working days."
+
+I also handled the monthly limit: I added a call to fetch the employee's regularization count for the current month before showing the form. If they've hit the limit, I showed a warning banner: "You've used all your regularization slots for this month. Your request will still be accepted but is flagged for HR review." This matches the backend behavior — over-limit requests are accepted but flagged with `overLimit: true` rather than hard-rejected. This soft-cap design was specified in `CLAUDE.md`.
+
+## Learning Outcomes
+- Built the employee-side regularization request form end to end
+- Implemented client-side `regularizationWindowDays` validation using working-day math
+- Understood the soft-cap design for `maxRegularizationsPerMonth` — warn, don't block
+- Learned that rejected/cancelled requests don't consume a monthly slot (only approved ones count)
+
+## Challenges & Solutions
+Computing the earliest allowed date on the frontend (to disable past dates in the date picker) required implementing the same working-day subtraction logic as the backend's `subtractWorkingDays` utility. I extracted this into a small `subtractWorkingDaysClient(date, n, holidays)` helper function in the component.
+
+---
+
+**Date:** Tuesday, 26 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I completed the regularization feature by working on the approval side in the HR portal's `Regularization.js` page (in `hrms-frontend/src/pages/`). The HR page shows all pending regularization requests with the employee name, date, original punches, proposed punches, and reason. HR can approve (with an optional note) or reject (with a mandatory note) each request.
+
+I read `regularizationController.js`'s `approveRegularization` handler carefully. When HR approves a request, the handler applies the correction by calling `applyCorrection` — a shared function that takes the corrected punch times, writes them to the `AttendanceRecordModel`, and calls `finalizeDay` to recompute the attendance status with the corrected data. The recomputed status and any flag changes (e.g., a previously absent day becoming present) are written back to the record. Every decision (approve or reject) is recorded with `decidedBy: { userId, name, actedAt, note, overrodeLimit }` — the `overrodeLimit` flag marks cases where the monthly cap was exceeded.
+
+I noticed an important `CLAUDE.md` guideline about the reminder-vs-queue consistency rule. In the regularization context, this translates to: when the HR page shows "submitted on 22 May" and "window closes on 26 May," both dates must use the same working-day math. If the display uses calendar days but the backend uses working days, HR could see a misleading window. I verified the existing code was consistent — both display and validation use `workingDayUtils.js`.
+
+In the afternoon, I also studied `utils/attendanceUtils/leaveDayUtils.js` which provides helpers for checking whether a given day is a leave day for an employee. These helpers are used both in the attendance finalization job (to mark leave days correctly) and in the regularization controller (to prevent submitting corrections for days that are approved leave days — there's no need to correct a punch record for a day you were officially on leave).
+
+## Learning Outcomes
+- Understood the `applyCorrection` function — the shared handler that applies approved regularization punch corrections and triggers recomputation
+- Learned about the `overrodeLimit` flag and how it tracks when monthly caps were bypassed
+- Understood `leaveDayUtils.js` as a cross-module utility used by both attendance finalization and regularization validation
+- Reinforced the reminder-vs-queue consistency principle from `CLAUDE.md`
+
+## Challenges & Solutions
+I found that the `Regularization.js` HR page had a bug where approved requests were still showing in the "Pending" tab for a few seconds after approval due to optimistic UI state not being cleared correctly. I fixed this by removing the item from the local state array immediately on successful API response.
+
+---
+
+**Date:** Wednesday, 27 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I started work on the leave management module. I began by reading `LeaveRequestModel.js` and `LeaveBalanceModel.js`. A leave request stores the employee code, the leave type (annual, sick, casual, comp-off, etc.), the start and end dates, the duration in days, the reason, and the approval status. The approval status follows a specific state machine: `pending_manager` → `pending_hr` → `approved` (or `rejected` at either step). If the employee has no reporting manager configured, the request goes directly to `pending_hr`.
+
+I read `leaveController.js`'s `createLeaveRequest` handler. The handler validates the request: it checks that the employee has sufficient leave balance, that the dates don't overlap with an already-approved leave, and that advance notice requirements are met (certain leave types may require N days' notice per the leave policy). If the employee has a reporting manager (`reportingManager` field in their profile), the request status is set to `pending_manager` and the manager receives an email notification. If no manager is set, it goes straight to `pending_hr`.
+
+I studied `utils/attendanceUtils/balanceUtils.js` in detail. The `availableOf(balance)` function implements the canonical leave balance formula: `available = carriedForward + accrued + adjusted − used`. The `accrued` field is the granted quota (not a separate accrual process). The `adjusted` field is a direct HR adjustment — positive values add days (grants), and negative values would subtract. The `hrAdjustBalance` function in `leaveController.js` uses `$inc: { adjusted: delta }` to update this field, which means multiple adjustments accumulate correctly.
+
+I also read `utils/attendanceUtils/leaveValidation.js` which contains the `validateLeaveRequest` function. This function checks clubbing restrictions (some leave types cannot be combined with others), maximum consecutive days rules, and leave-type-specific conditions. Understanding this validation layer was important because it's called both on submission and during the approval flow.
+
+## Learning Outcomes
+- Understood the leave request state machine: `pending_manager` → `pending_hr` → `approved/rejected`
+- Learned the canonical balance formula: `available = carriedForward + accrued + adjusted − used`
+- Understood `validateLeaveRequest` as a shared validation layer used at submission and approval
+- Learned how the reporting manager chain routes requests correctly based on employee profile configuration
+
+## Challenges & Solutions
+The leave balance formula tripped me up initially — I expected a separate "quota" field but realized that `accrued` IS the quota. Once this was clear, the balance math became straightforward.
+
+---
+
+**Date:** Thursday, 28 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Continuing from yesterday's leave management study, today I implemented the two-step approval flow in the HR portal. I read the existing `LeaveManagement.js` page which already had the HR approval UI, then studied the `TeamApprovals.js` page in the employee portal which handles the manager approval step. The manager sees a list of requests from their direct reports in `pending_manager` state. Approving moves the request to `pending_hr`; rejecting (with a mandatory reason) sets it to `rejected` and notifies the employee.
+
+I focused on the deduction lock — the rule that leave balance deductions only happen on final HR approval, not manager approval. I traced this through `leaveController.js`: the `approveManagerLeave` handler transitions state to `pending_hr` but does NOT touch the balance. Only `approveHrLeave` calls `$inc: { used: days }` on the `LeaveBalanceModel`. This prevents a situation where a manager approves but HR later rejects — the balance was never touched, so no correction is needed.
+
+I also worked on the attendance recomputation trigger. Per `CLAUDE.md`, HR approval of a leave request must trigger recomputation of attendance for the approved dates. I studied how this is implemented: after `approveHrLeave` updates the balance, it loops through each approved leave date, fetches the attendance record, and calls `finalizeDay` with a `leaveOverride: true` parameter. This parameter tells `finalizeDay` to mark the day as "on leave" regardless of punch records.
+
+In the afternoon I worked on `MyLeaves.js` in the employee portal — the page where employees can see their leave balance, submitted requests, and request history. I improved the balance display to show the breakdown: Carried Forward + Accrued + Adjusted − Used = Available. Making this formula visible to the employee helps them understand their balance and reduces support queries to HR.
+
+## Learning Outcomes
+- Understood the two-step approval flow and how state transitions work between manager and HR
+- Learned the deduction lock design: balance is only debited on final HR approval
+- Understood the attendance recomputation trigger on leave approval — consistency between leave and attendance records
+- Improved the employee-facing balance display to show the full formula breakdown
+
+## Challenges & Solutions
+I initially placed the attendance recomputation call before the balance update, which could have caused a race condition if the recomputation happened while the balance was still unchanged. Reordering to update balance first, then recompute attendance, resolved this.
+
+---
+
+**Date:** Friday, 29 May 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+On the final day of week four, I implemented a new feature: the leave balance inline editing grid for HR. Previously, HR could only adjust leave balances using a per-field modal. The new requirement was to provide a compact table where HR can see all leave types for an employee at once and edit any value inline, with cross-reflection between Quota, Used, and Balance fields.
+
+I built the `hrSetBalance` handler in `leaveController.js`. This handler accepts `emp_code`, `leaveTypeKey`, `used`, `adjusted`, and an optional `note`. It uses `$set` to write the new values to the specific leave type's balance, and pushes an audit entry into the balance's `adjustments` array recording who changed what and when. The `adjusted` field is computed from the frontend: `adjusted = editedQuota - carriedForward - accrued` (since `available = cf + accrued + adjusted - used`, solving for `adjusted`: `adjusted = available - cf - accrued + used = (quota - used) - cf - accrued + used = quota - cf - accrued`).
+
+I added the route `POST /api/leaves/balances/set` protected by `checkPermission("leaves.manage", "modify")`. Then I built the inline editing grid in `LeaveManagement.js`. The table groups leave types into three colored sections (Quota in green, Used in yellow, Balance in blue). In view mode, cells show the values as text. When "Edit" is clicked for an employee row, number inputs appear with `step=0.5` for half-day precision. Editing Quota updates Balance (Used fixed); editing Used updates Balance (Quota fixed); editing Balance updates Quota (Used fixed). Save loops through changed entries and calls the new endpoint.
+
+The design goal was to fit all leave types on one page without horizontal scroll — I used `width:100%`, `tableLayout:auto`, and compact padding (3px top/bottom for cells, 8px font size) to achieve this.
+
+## Learning Outcomes
+- Built the `hrSetBalance` backend endpoint with audit trail
+- Implemented the cross-reflecting Q/U/B inline input logic
+- Derived the `adjusted` field formula: `adjusted = quota − carriedForward − accrued`
+- Learned compact CSS table techniques: `tableLayout:auto`, tight padding, small font for dense data grids
+
+## Challenges & Solutions
+The cross-reflection logic initially had a circular dependency — editing Q updated B, which tried to update Q again. Solving this required separating the "source of change" in state updates so only the directly edited field triggers reflection in others.
+
+---
+
+**Date:** Monday, 01 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Week five began with the payroll module. I started by reading `PayrollRunModel.js` which stores one payroll run per month per company. A payroll run contains: the run month/year, status (`draft`/`finalized`), individual payroll records for each employee (embedded), and summary statistics. Each employee's payroll record stores the gross salary, all components (basic, HRA, special allowance, PF employee, PF employer, etc.), the net pay, and any deductions for the month (loan EMIs, leave without pay, etc.).
+
+I read `payrollController.js`'s `generatePayroll` handler. This handler fetches all active employees, gets their attendance summary for the month (to compute leave-without-pay days), checks for any active loans scheduled for salary deduction, and calls `utils/salaryCalc.js` for each employee to compute their components. The `salaryCalc.js` utility takes an employee's CTC, the breakdown percentages from the bank/payroll fields, and applies standard Indian statutory deductions (PF contribution rates). This keeps the computation logic in a single, testable utility rather than scattered across the controller.
+
+I then studied how payroll integrates with the loan module. `LoanModel.js` stores active loans with `repaymentMethod: "salary"` and a `lastDeducted` field (year + month) for idempotency — if payroll generation is run twice for the same month, the loan deduction only applies once. When `generatePayroll` processes each employee, it checks for active salary-deduction loans and deducts the EMI from the net pay. The loan's `totalRepaid` and `outstanding` fields are updated, and a repayment ledger entry is added to the `repayments` array.
+
+In the afternoon, I read `utils/loanUtils.js` which provides `computeLoanFigures` (calculates interest, total payable, and EMI from principal, rate, and tenure) and `recordLoanRepayment` (applies a repayment to a loan document). I also briefly looked at `loanController.js` to understand the HR-facing loan management flow: HR can create loans, preview EMI computations before creating, and record manual repayments for loans not repaid via salary.
+
+## Learning Outcomes
+- Understood the payroll run model and how individual employee payroll records are embedded within a monthly run
+- Learned how `salaryCalc.js` computes salary components from CTC and percentage breakdowns
+- Understood the loan-payroll integration and the `lastDeducted` idempotency guard
+- Learned `computeLoanFigures` for flat-interest EMI calculation
+
+## Challenges & Solutions
+Understanding flat-interest vs. reducing-balance interest was important for correctly reading `computeLoanFigures`. The system uses flat interest where the full principal is used for interest calculation throughout the tenure, making EMIs fixed.
+
+---
+
+**Date:** Tuesday, 02 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I explored the PDF generation system — one of the most infrastructure-heavy parts of the backend. Stasis HRMS uses `wkhtmltopdf` 0.12.6 for all PDF generation. The decision to use `wkhtmltopdf` instead of Puppeteer/Chromium is deliberate and documented in `CLAUDE.md`: wkhtmltopdf is significantly lighter and faster for server-side PDF generation of structured documents, and it's installed directly in the Docker container via apt, avoiding the 300MB+ Chromium download.
+
+I read `services/document/core/pdfGenerator.js` to understand the generation pipeline. The generator takes an HTML string and calls `wkhtmltopdf` with specific options: `pageSize A4`, zero margins, `printMediaType`, `background`, `UTF-8` encoding. It does NOT set DPI, imageDPI, or minimumFontSize overrides — I learned from `CLAUDE.md` that these overrides were tried previously and caused rendering inconsistencies. The generator returns a Buffer that can be either saved to Drive or sent directly as a file download response.
+
+I studied `services/document/core/pdfLayout.js` which defines the page size constants (A4 width/height in mm, usable area accounting for margins) used by all document builders. Then I read `services/document/core/pdfTemplateBuilder.js` which provides the base HTML shell: it injects the Lexend Google Font, sets baseline CSS (font-family, color, table styles), and wraps the document content in a proper HTML5 structure. Every document builder must call this template wrapper to ensure consistent fonts and base styles.
+
+I traced a complete document generation flow by reading `services/document/builders/payslipBuilder.js`. The builder function takes the employee data and payroll run data, constructs an HTML table with all salary components, and returns an HTML string. The controller in `documentController.js` calls this builder, passes the result to `pdfGenerator.js`, uploads the PDF to Google Drive, and saves a record in `EmployeeDocumentModel.js` with the Drive file ID.
+
+## Learning Outcomes
+- Understood the wkhtmltopdf-based PDF pipeline: builder → template wrapper → generator → Drive upload → DB record
+- Learned why wkhtmltopdf is used over Puppeteer: lighter, faster, no Chromium required
+- Understood `pdfLayout.js` as the single source of truth for page dimension constants
+- Learned that the `pdfTemplateBuilder.js` wrapper handles font injection and base CSS for all documents
+
+## Challenges & Solutions
+Understanding the margin and dimension math in `pdfLayout.js` required knowing wkhtmltopdf's coordinate system (zero margins means the builder must set its own padding in HTML/CSS). No code blockers today.
+
+---
+
+**Date:** Wednesday, 03 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Continuing from yesterday's PDF work, today I studied the complete set of document builders in `services/document/builders/`. There are nine builders in total: `payslipBuilder`, `appointmentLetterBuilder`, `jobOfferLetterBuilder`, `internshipOfferLetterBuilder`, `relievingLetterBuilder`, `experienceCertificateBuilder`, `appraisalLetterBuilder`, `noDueCertificateBuilder`, and `internshipCompletionCertificateBuilder`. Each builder follows the same pattern: a function that takes relevant data parameters and returns an HTML string using the `pdfTemplateBuilder` wrapper.
+
+I paid special attention to `appointmentLetterBuilder.js` and `jobOfferLetterBuilder.js` because these have the most complex layouts. Both use multi-column HTML tables, include the company letterhead, and require precise formatting for legal validity. I noticed that `services/document/builders/genderUtils.js` provides pronoun helpers (`subjectPronoun`, `objectPronoun`, `possessivePronoun`) used across builders to ensure gender-appropriate language in letters (e.g., "his/her salary", "he/she is entitled").
+
+I then studied the `legalCore/` service alongside `core/`. The legal document service (`services/document/legalCore/`) uses the same pattern as `core/` but with a separate `legalTemplateBuilder.js` that applies slightly different base styles (formal legal document formatting with specific indentation and clause numbering). Legal documents include the NDA, tenure commitment agreement, and exit NDA. I read `exitNdaBuilder.js` and `ndatenureAgreement.js` to understand the structure — they generate multi-page legal agreements with variable content interpolated from employee and company data.
+
+I also briefly explored `documentController.js` to understand all the routes exposed by the document generation service. The controller has handlers for generating each document type, saving custom edits via the advanced editors, and deleting documents. Every generation action is audited via `writeAudit()`. I noted that the `DocBuilder.js` frontend page provides a WYSIWYG HTML editor for customizing documents before finalization.
+
+## Learning Outcomes
+- Understood the complete set of document builders and the shared builder pattern
+- Learned about `genderUtils.js` for gender-appropriate pronoun interpolation in documents
+- Understood the `legalCore/` service as a parallel to `core/` with formal legal document styling
+- Got an overview of all document generation routes in `documentController.js`
+
+## Challenges & Solutions
+No major blockers. The legalCore and core services are nearly identical in structure — the only differences are the template wrapper styling and the clause-numbering CSS. I was careful not to mix the two by mistake.
+
+---
+
+**Date:** Thursday, 04 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I worked on the email system, which underpins notifications across the entire HRMS. I read `utils/emailUtils.js` which provides the `sendEmail(to, subject, htmlBody)` function. The email system has a two-tier fallback: it first attempts to send via the Gmail API using OAuth2 credentials (a service account), and if that fails (token refresh error, rate limit, etc.), it falls back to Nodemailer with SMTP credentials. This dual-path ensures email delivery even if the primary OAuth2 token expires.
+
+I also studied `utils/emailFooter.js`, which is one of the most important utility files for email consistency. It exports two key functions: `emailHtmlEnvelope(content)` wraps raw HTML content in a full `<!DOCTYPE html>` shell with the Lexend font loaded from Google Fonts CDN, and `getEmailFooterTableRow()` returns the standard Saeculum footer HTML (company logo, address, legal disclaimer) as a table row for insertion inside the email's content table. Per `CLAUDE.md`, every outgoing email must use `emailHtmlEnvelope()` — no email is allowed to write raw `<!DOCTYPE html>` in a controller or handler.
+
+I then reviewed the `utils/googleChatNotifier.js` utility, which sends notifications to Google Chat via webhook. The webhook URL comes from the `GOOGLE_CHAT_WEBHOOK_URL` environment variable, and the entire feature is guarded by the `GOOGLE_CHAT_ENABLED` flag — if not enabled, all calls to the notifier are silent no-ops. This opt-in pattern means the backend can be deployed without Google Chat without any code changes.
+
+I looked at `utils/emailTemplates.js` (the old static templates) and `utils/emailTemplateLoader.js` (the new dynamic loader) to understand how email content evolved. The static templates are hardcoded HTML strings, while the new dynamic loader fetches templates from `EmailTemplateModel` (MongoDB), substitutes variables using a `{{variable}}` syntax, and falls back to the static templates if the DB template is not found. This evolution allows HR to edit email content without developer involvement.
+
+## Learning Outcomes
+- Understood the Gmail API OAuth2 → Nodemailer SMTP fallback pattern for resilient email delivery
+- Learned that `emailHtmlEnvelope()` is a mandatory wrapper for all outgoing emails
+- Understood the Google Chat notifier's opt-in guard pattern (`GOOGLE_CHAT_ENABLED` flag)
+- Traced the evolution from static `emailTemplates.js` to dynamic `emailTemplateLoader.js`
+
+## Challenges & Solutions
+Setting up Gmail OAuth2 credentials for local development required creating a Google Cloud project, enabling the Gmail API, and configuring OAuth2 consent screen. My supervisor shared a development credentials file so I didn't have to set this up from scratch.
+
+---
+
+**Date:** Friday, 05 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Continuing the email work, today I implemented the WYSIWYG email builder feature — one of the most impactful quality-of-life improvements for non-technical HR staff. The requirement was to add a Visual editing tab (the default) to the existing `EmailManager.js` page so that HR can edit email templates without writing HTML. The constraint was no new npm dependencies — the entire rich-text editor had to be built with browser built-ins.
+
+I created `hrms-frontend/src/components/RichEmailEditor.js` using the `contenteditable` HTML attribute and `document.execCommand` for text formatting. Although `execCommand` is technically deprecated, it remains universally supported in all modern browsers and is the only way to implement a rich-text editor without a library. The toolbar includes: paragraph/heading style selector, bold/italic/underline, ordered/unordered lists, text alignment, link insertion (via `window.prompt`), a color swatch picker, and a "clear formatting" button.
+
+The most technically interesting part was the variable insertion menu. Email templates use `{{variable}}` placeholders (like `{{employeeName}}`, `{{joiningDate}}`). The editor renders a dropdown of available variables from the template's metadata. When a variable is selected, `document.execCommand("insertText", false, "{{variableName}}")` inserts it at the current cursor position in the contenteditable div. This works seamlessly with the rich-text content.
+
+I also had to solve the React state synchronization problem with contenteditable. The standard React controlled-component approach (setting `innerHTML` on each render) causes the cursor to jump to the beginning on every keystroke. I solved this using a `useRef` to the contenteditable element and only syncing `innerHTML` when the value changes externally (template switch) AND the element doesn't have focus — if the user is actively typing, React never touches the DOM.
+
+I wired this into `EmailManager.js`: the page now has three tabs — Visual (default, `RichEmailEditor`), HTML (raw textarea), and Preview (read-only rendered HTML in an iframe). Switching between tabs syncs the content bidirectionally.
+
+## Learning Outcomes
+- Built a zero-dependency WYSIWYG rich-text editor using `contenteditable` and `document.execCommand`
+- Solved the React + `contenteditable` cursor-jump problem using a ref-based sync strategy
+- Implemented the `{{variable}}` insertion menu using `document.execCommand("insertText")`
+- Understood the three-tab (Visual/HTML/Preview) editing workflow for non-technical users
+
+## Challenges & Solutions
+The cursor-jump problem with `contenteditable` was the hardest challenge of the week. The key insight: only sync `innerHTML` from React state to the DOM when the user is NOT currently editing (i.e., the element doesn't have focus). This required the `document.activeElement !== editorRef.current` guard.
+
+---
+
+**Date:** Monday, 08 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Week six started with the document builder UI pages. I worked on `DocBuilder.js`, which provides a custom HTML editor for generating and customizing HR documents before PDF generation. The page uses a split-pane layout: a source selection panel on the left (employee picker, document type) and a live HTML editor on the right. When a document type is selected, the server generates the default HTML using the appropriate builder function and returns it. The HR user can then make custom edits in the textarea, preview the result, and generate the final PDF.
+
+I studied `PayslipAdvancedEditor.js` — a more specialized editor specifically for payslips that provides a structured form for adjusting salary components rather than raw HTML editing. The form mirrors the payslip structure (basic pay, allowances, deductions) and regenerates the payslip HTML on the fly as values are changed. This is a better UX for payroll use cases where HR doesn't need HTML access but does need component-level control.
+
+I also worked on `OfferLetterAdvancedEditor.js`, which provides a form-based editor for offer letters — HR can change the designation, CTC, joining date, and other key fields without editing HTML. The backend exposes a `POST /api/documents/offer-letter/preview` route that accepts these field overrides and returns the fully rendered HTML using the `jobOfferLetterBuilder`. This preview route is also used by the frontend to show a live preview in a sandboxed iframe.
+
+In the afternoon, I focused on understanding the hiring module at a high level to prepare for tomorrow's detailed implementation work. I read `HiringRequestModel.js` (an internal HR request for a new hire), `JobOpeningModel.js` (the public-facing job posting), and `CandidateApplicationModel.js` (a submitted application). These three models form the hiring pipeline: a hiring request is raised internally, approved, and converted into a job opening; candidates apply to the job opening; HR shortlists, interviews, and selects candidates.
+
+## Learning Outcomes
+- Understood `DocBuilder.js` as a general-purpose HTML editor backed by server-side document generation
+- Learned the specialized form-based approach of `PayslipAdvancedEditor.js` for non-technical HR use
+- Understood the `preview` route pattern for real-time document rendering in advanced editors
+- Got an overview of the three-model hiring pipeline: hiring request → job opening → candidate application
+
+## Challenges & Solutions
+The sandboxed iframe for document preview had a CORS issue when loading Google Fonts from inside the iframe srcdoc. I resolved this by using `sandbox="allow-same-origin"` on the iframe, which allows the font stylesheet to load correctly.
+
+---
+
+**Date:** Tuesday, 09 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I worked on the hiring module in depth. I read `jobOpeningController.js` end to end — this is one of the longer controller files. It handles job opening CRUD, the candidate application form (a public route, no authentication required), candidate shortlisting, and status transitions. The public `applyForJob` handler is mounted outside the `protect` chain (directly on `app.use("/api", jobOpeningRoutes)`) so candidates can submit applications from the public job application page without logging in.
+
+I studied `ImmersiveJobApply.js` — the public-facing React page where candidates apply for jobs. This is a multi-step form with sections for personal information, education, experience, skills, and document uploads (resume, cover letter). The form sends a `multipart/form-data` request because it includes file uploads (the resume PDF). The backend uses `multer` to handle the file upload, stores the resume in Google Drive, and creates a `CandidateApplicationModel` record with the Drive file ID.
+
+I also worked on `HiringRequest.js` in the HR portal — the internal form where HR raises a request for a new hire. The form captures the department, designation, required skills, expected joining date, and business justification. Submitted requests go to a manager or admin for approval before a job opening can be created. I read `hiringRequestController.js` to understand this approval flow. Approved requests automatically create a corresponding `JobOpeningModel` record with `status: "open"`.
+
+I spent the afternoon on `InterviewTracker.js` — the page where HR manages the interview pipeline. The page shows all candidates for a job opening organized by stage (Applied, Shortlisted, Interview Scheduled, Interview Done, Selected, Offered, Rejected). HR can move candidates between stages and schedule interviews from this page. I read `interviewController.js` to understand the scheduling flow: when an interview is scheduled, the system sends a calendar-style email to the candidate and the interviewer.
+
+## Learning Outcomes
+- Understood the public job application flow: multipart upload → Drive storage → CandidateApplicationModel
+- Learned the hiring request → job opening conversion flow triggered by request approval
+- Understood the interview pipeline stages and how candidates progress through them
+- Learned how multer handles multipart/form-data in Express for file uploads
+
+## Challenges & Solutions
+I found that `multer`'s default `memoryStorage` was being used, which loads the entire file into memory before uploading to Drive. For large resumes, this could be a memory issue. I flagged this to my supervisor as a potential improvement (switching to streaming upload) but left it as-is per the task scope.
+
+---
+
+**Date:** Wednesday, 10 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I focused on `TalentPool.js` — the HR page that shows all candidates across all job openings in a unified view. This page is particularly useful for referencing past candidates when new openings arise. I implemented improvements to the candidate detail panel, which shows the full candidate profile on the right when a candidate is selected from the list.
+
+The candidate detail panel needed to show the `SignatureCredentials` component — a viewer for the electronic signature captured during application submission. I read the existing `SignatureCredentials.js` component which I would be implementing the full signature feature for in a later week. For now, I understood its props: `candidateApplicationCode` (to query signatures by application), `empCode` (for onboarding/offboarding signatures), and `title`.
+
+I also worked on the `HiringQueue.js` page — an alternative view of the hiring pipeline focused on HR's daily task list rather than the pipeline visualization. It shows candidates requiring action today (interviews scheduled, offers to be sent, feedback pending) and surfaces them as a prioritized list.
+
+In the afternoon, I studied `services/calendarService.js` which integrates with Google Calendar. When an interview is scheduled, the backend creates a Google Calendar event for the interviewer using the service account. The event includes the candidate's name, the job title, interview type (technical/HR/managerial), and the meet link if it's a video interview. The `calendarService.js` uses the Google Calendar API v3 via the `@googleapis/calendar` package.
+
+I also read `PublicJobApply.js` — the older public job application page (a simpler form compared to `ImmersiveJobApply.js`). Understanding both pages helped me see the evolution of the application UX: the immersive version was built later to provide a more engaging candidate experience.
+
+## Learning Outcomes
+- Understood `TalentPool.js` as a cross-opening unified candidate database view
+- Learned how `calendarService.js` creates Google Calendar events for interview scheduling
+- Understood the difference between `PublicJobApply.js` (simple form) and `ImmersiveJobApply.js` (multi-step immersive form)
+- Got a preview of the `SignatureCredentials` component structure for the upcoming e-signature feature
+
+## Challenges & Solutions
+Setting up the Google Calendar API credentials for local testing required configuring calendar scope in the service account. My supervisor provided the service account key file with all required scopes pre-configured.
+
+---
+
+**Date:** Thursday, 11 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I started on the asset management module. I read through the three asset models: `AssetItemModel.js` (the catalog of asset types — laptops, monitors, chairs, etc.), `AssetUnitModel.js` (specific physical units with serial numbers and current assignment), and `EmployeeAssetModel.js` (the assignment history linking units to employees). This three-model separation cleanly distinguishes between "what kind of asset" (item), "which specific unit" (unit), and "who has it now" (assignment).
+
+I read `assetController.js` to understand the QR code generation feature. Each `AssetUnit` has a unique serial number, and the controller generates an HMAC-SHA256 QR code for each unit using `process.env.ASSET_QR_SECRET`. The QR code encodes both the serial number and a signature (`sig = hmac(serialNumber)`). This same QR code is also used by the Electron tracker agent for device enrollment — scanning the QR proves the device is a company-owned asset without sharing the HMAC secret with the agent.
+
+I studied the asset assignment flow: when HR assigns an asset unit to an employee, the controller updates `AssetUnitModel.assignedToCode` and creates a new `EmployeeAssetModel` record marking the assignment date. When the asset is returned, a return date is added to the assignment record and `assignedToCode` is cleared. This gives a full assignment history for every unit.
+
+I also looked at `PublicAssetDetail.js` — a public page (no authentication) that shows basic asset information when a QR code is scanned by anyone. This is useful for IT support: scanning an asset sticker shows who it's assigned to and when it was assigned, without requiring an HR login. The route is mounted outside the `protect` chain.
+
+I spent the afternoon studying how the asset module would eventually integrate with the tracker agent enrollment flow — something I would work on in detail in week nine.
+
+## Learning Outcomes
+- Understood the three-model asset structure: item (catalog) → unit (physical) → assignment (history)
+- Learned the HMAC-SHA256 QR code generation pattern and how the same secret is used for tracker agent enrollment
+- Understood the `PublicAssetDetail.js` public page for QR-code-based asset lookups
+- Traced the assignment/return lifecycle in `assetController.js`
+
+## Challenges & Solutions
+Understanding why a separate `EmployeeAssetModel` is needed (rather than just storing current assignment in `AssetUnitModel`) became clear when I thought about history: you need to know every previous assignment, not just the current one. The separate model is the right design.
+
+---
+
+**Date:** Friday, 12 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+To close out week six, I worked on the performance review module. I read `PerformanceReviewCycleModel.js`, `PerformanceFormTemplateModel.js`, and `PerformanceReviewModel.js`. The cycle model stores the review period (quarter + year), the status (draft/active/closed), and the default template ID. The template model stores a structured questionnaire with sections and questions. The review model stores the actual submitted answers, the scores, and the direction (self/downward/upward).
+
+I read `performanceController.js` to understand the full lifecycle. HR creates a cycle in `draft` status, assigns templates to roles/directions, and then activates it — activating a cycle triggers emails to all participants informing them that the review period has begun. Once active, employees and managers can submit reviews. HR can close the cycle, making all reviews read-only.
+
+I studied the template resolution logic: when determining which form template to use for a given reviewer-reviewee pair, the controller first looks for a role-specific template mapping (e.g., "Engineers doing a self-review use Template A"). If no role-specific mapping exists for that direction, it falls back to the cycle's `defaultTemplateId`. I implemented a small fix: the resolution function was silently returning `null` when neither a role-specific template nor a default was found — I added a proper error response with a descriptive message.
+
+I also worked on `PerformanceReview.js` in the HR portal frontend — the page for managing review cycles, viewing submitted reviews, and using HR override routes (which allow HR to force-submit a review on behalf of a participant who hasn't submitted). I changed the modal header color from the dark `#0f172a` to the brand blue `#2f7ec5` per the design feedback from my supervisor — dark headers were too visually heavy for the modal.
+
+## Learning Outcomes
+- Understood the performance review cycle lifecycle: draft → active (emails sent) → closed (read-only)
+- Learned the template resolution logic: role-specific first, then cycle default
+- Understood the HR override route for force-submitting reviews on behalf of participants
+- Applied design feedback: changed modal header color to brand blue
+
+## Challenges & Solutions
+The unique index on `PerformanceReviewModel` `{cycleId, revieweeEmpCode, reviewerEmpCode, direction}` caused a duplicate key error when the same pair tried to submit twice. I ensured the frontend disabled the submit button after the first submission to prevent this.
+
+---
+
+**Date:** Monday, 15 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Week seven began with the Priority Queue (PQ) system — the scheduling backbone for all automated reminders and events in Stasis HRMS. I read `models/PQEventModel.js` which stores queue events. Each event has an `eventKey` (a YYYYMMDD integer representing the date to process), a type, a payload, a status (pending/processed/failed), and a processed timestamp. The integer `eventKey` field is indexed for fast range queries.
+
+I read `jobs/pqScheduler.js` to understand the queue sweep. The scheduler runs hourly (via `node-cron`) and queries for all events with `eventKey <= today` and `status: "pending"`. It processes each event by calling the appropriate handler from `utils/pqUtils/masterPQProcessor.js`. After processing, events are marked `processed`. Failed events are marked `failed` with an error message, and can be manually retried from the HR portal.
+
+I studied `utils/pqUtils/pqInserter.js` which provides the `insertEvent(type, payload, dateKey)` function used throughout the backend to queue new events. The key decision point is always the `dateKey` — this is where the weekend-shift logic from `CLAUDE.md` is critical. Every date passed to `pqInserter` must already be shifted off weekends using `shiftWeekend(dateKey)` from `utils/pqUtils/dateKeyUtils.js`. I traced several places in `onboardingController.js` where this shift is applied: appraisal date, appraisal reminder, joining reminder, 1/2/3 month meeting dates.
+
+I read `utils/pqUtils/dateKeyUtils.js` in full. The `shiftWeekend(key)` function takes a YYYYMMDD integer, computes the day of week, and shifts Saturday → Friday (key - 1) or Sunday → Monday (key + 1). The `addMonthsToKey(key, n)` function adds or subtracts months while preserving the day-of-month. The `normalizeAppraisalKey` function implements the "joining day ≤ 10 → same month first, else next month first" rule from `CLAUDE.md`.
+
+## Learning Outcomes
+- Understood the PQ system: MongoDB-backed event queue swept hourly, YYYYMMDD integer keys
+- Learned the `pqInserter.insertEvent()` pattern used to queue events across the system
+- Understood `dateKeyUtils.js`: `shiftWeekend`, `addMonthsToKey`, `normalizeAppraisalKey`
+- Learned the appraisal date computation rule and why weekend-shifting is mandatory for the 1st of month
+
+## Challenges & Solutions
+Understanding why the appraisal reminder specifically needs weekend-shifting (even though it's just "1 month before the appraisal") became clear once I realized that the 1st of a month falls on a weekend roughly 2/7 of the time — and "1 month before the 1st" is also a 1st, so it has the same probability. The shift is never optional.
+
+---
+
+**Date:** Tuesday, 16 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I studied the onboarding timeline system in depth — the module that tracks and automates the new hire journey from offer acceptance to completion of onboarding steps. I read `onboardingController.js` which is the largest controller file in the backend (~1,000+ lines). It handles the public offer letter response page, the public policy document sign-off page, step completion/reversion by HR, appraisal date computation, and the queueing of all scheduled reminders.
+
+I focused on `computeAppraisalDate(joiningDate)` — the canonical appraisal date computation function. This function implements the rule from `CLAUDE.md`: the appraisal is 1 year from the joining date, snapped to the 1st of a month (joining day ≤ 10 → same month first next year; joining day > 10 → next month first next year), then weekend-shifted. I traced this function and verified it handles edge cases: a joining date of January 5 produces February 1 (next year, same month, but wait — joining day 5 ≤ 10, so same month), and a joining date of January 15 produces March 1 (next year, next month).
+
+I studied `normalizeScheduledDate(isoString)` — a counterpart to `shiftWeekend` but operating on ISO date strings rather than YYYYMMDD integer keys. This is used for "scheduled for" dates stored as full ISO timestamps rather than date keys. The function converts the ISO string to a Date, checks the day of week, and shifts weekends.
+
+I also read the `respondPublicOfferLetter` handler which manages the public offer letter acceptance page (`OfferLetterResponse.js` in the frontend). When an employee clicks the acceptance link in their offer email, they can review the offer, tick acknowledgement checkboxes, and submit their acceptance. The handler updates the employee's onboarding status and queues the first set of reminder events (joining reminder, 1-month meeting, 2-month meeting, 3-month meeting, appraisal reminder).
+
+## Learning Outcomes
+- Understood `computeAppraisalDate` — the canonical implementation of the 1-year, 1st-of-month, weekend-shift appraisal rule
+- Learned `normalizeScheduledDate` as the ISO string counterpart to `shiftWeekend`
+- Traced the `respondPublicOfferLetter` handler and understood all the events queued at offer acceptance
+- Understood that all onboarding timeline date computation must route through canonical helpers — no inline re-derivation
+
+## Challenges & Solutions
+I initially tried to trace the appraisal date computation by following the `pqUtils/dateKeyUtils.js` path, which uses integer keys. The `onboardingController.js` uses Date objects via `computeAppraisalDate`, while the PQ uses `normalizeAppraisalKey` (integer keys). Both implement the same rule but for different data types — I had to keep them mentally separate.
+
+---
+
+**Date:** Wednesday, 17 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I worked on the scheduled jobs system — the one-off email dispatcher that handles 1-month, 2-month, and 3-month check-in meetings after an employee joins. I read `jobs/scheduledJobs/worker.js` which polls `ScheduledJobModel` every 60 seconds and fires any jobs with `runAt <= now` and `status: "pending"`. Each job has a `type` string that maps to a handler in `jobs/scheduledJobs/jobRegistry.js`.
+
+I read all the scheduled job handlers:
+- `sendJoiningReminder.js` — sends an email to HR two working days before the employee's first day
+- `send1MonthMeeting.js`, `send2MonthMeeting.js`, `send3MonthMeeting.js` — schedule and send meeting invites to HR and the new employee at 1, 2, and 3 months post-joining
+- `sendAppraisalReminder.js` — sends appraisal reminder to both HR and the employee
+- `sendExitNda.js` — sends the exit NDA document to an employee being offboarded
+- `sendPhase2Docs.js` — triggers the second phase of offboarding document collection
+- `sendInterviewReminder.js` — sends a reminder email to interviewer and candidate before a scheduled interview
+
+I also implemented a minor improvement to the scheduled jobs list in the HR portal (`ScheduledJobRoutes.js` and the backend handler): I added a filter to show only future pending jobs (rather than all jobs including historical ones) by default, with a toggle to view all. This reduced noise for HR who primarily cares about upcoming events.
+
+I studied `jobs/scheduledJobs/enqueue.js` — the utility that creates scheduled job records. Every call goes through `insertScheduledJob(type, payload, runAt)`. The `runAt` date must be computed using `normalizeScheduledDate` (to shift weekends) and `subtractWorkingDays` (for reminders fired N days before the actual event), following the same rules as the PQ system.
+
+## Learning Outcomes
+- Understood the scheduled jobs system: 60-second polling worker + job registry pattern
+- Learned all eight job handlers and their purpose in the employee lifecycle
+- Understood `insertScheduledJob` as the queuing entry point, with mandatory date normalization
+- Reinforced the CLAUDE.md rule: all scheduled date math must use `normalizeScheduledDate` or `subtractWorkingDays`
+
+## Challenges & Solutions
+I noticed a potential issue: if the `worker.js` polling runs while the server restarts, a job could be picked up twice if it's not marked `in_progress` before processing. I raised this observation with my supervisor — the current mitigation is to mark jobs `in_progress` as the first step in `worker.js` processing (already implemented), but I documented the edge case.
+
+---
+
+**Date:** Thursday, 18 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I worked on the email template management system in detail. I read `EmailTemplateModel.js` — each template stores a `key` (unique identifier like `"onboarding_offer_letter"`), a `subject` string, a `body` (HTML string with `{{variable}}` placeholders), a list of `variables` (the available placeholders for the template), and a `description`. The `variables` array is what powers the click-to-insert variable menu in the WYSIWYG email builder I built earlier.
+
+I read `emailTemplateController.js` which handles template CRUD. The most important handler is `getTemplate(key)` — this is used by `emailTemplateLoader.js` to fetch templates at email-send time. Templates are fetched fresh from the database on each send (not cached) so that HR edits take effect immediately without server restarts.
+
+I improved the `EmailManager.js` page by fixing a bug where the variable insertion from the visual editor and the HTML editor weren't in sync. When switching from Visual to HTML tab, the HTML editor was showing the old body before the last visual edit was committed. I fixed this by ensuring the visual editor's `onChange` handler was called on every `input` event (not just on blur), and that the `draftBody` state was always the single source of truth.
+
+I also worked on `utils/emailTemplateLoader.js` to understand the fallback chain. When an email needs to be sent, the loader tries to fetch the template from MongoDB by key. If the template doesn't exist in the database (e.g., it's a new template type that hasn't been seeded yet), it falls back to the static template in `utils/emailTemplates.js`. This graceful degradation means new email types can be added as static templates first, and migrated to DB-managed templates when HR is ready to edit them.
+
+## Learning Outcomes
+- Understood the email template model: key, subject, body with `{{variable}}` placeholders, variables array
+- Learned the fallback chain: DB template → static template from `emailTemplates.js`
+- Fixed the visual-to-HTML sync bug by making the `onChange` handler fire on every input event
+- Understood why templates are fetched fresh (not cached) — HR edits must take effect immediately
+
+## Challenges & Solutions
+The `onChange` on `input` approach was needed to ensure every keystroke in the contenteditable editor immediately updates the parent state. The previous approach (firing only on blur) meant edits made before a tab switch were lost.
+
+---
+
+**Date:** Friday, 19 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Closing week seven, I worked on the `AppreciationHub.js` and `HallOfFame.js` features in the HR portal — the awards and recognition module. I read `AwardNominationModel.js` which stores nominations for various award categories (Employee of the Month, Performance Star, etc.) with the nominee's emp_code, the nominator, the category, and the status (nominated/approved/rejected). I also read `awardController.js` to understand the nomination and approval flow.
+
+I also worked on `utils/awardWindow.js` which implements the `isWithinAwardWindow` check — awards can only be nominated during a specific window (first week of each month). Outside the window, nominations are disabled and the UI shows a message with the next nomination window opening date.
+
+I then began studying the `OnboardingTimeline.js` and `ProbationTimelinePage.js` HR portal pages. The onboarding timeline shows the complete journey of a new hire: every onboarding step (background verification, document collection, IT setup, etc.) as a visual timeline. HR can mark steps complete, unmark them, and see the scheduled dates for automated events like the 1/2/3-month meetings. I implemented a CSS fix: the probation timeline container was missing the `.probation-timeline` class that triggers the `obt-action-btn` button sizing rules, which I added to the `ProbationTimelinePage.js` render.
+
+I spent the afternoon studying `Offboarding.js` in the HR portal. The offboarding module mirrors the onboarding timeline but for departing employees. Steps include: resignation acceptance, clearance (IT, Finance, Admin), exit interview, final settlement, and document issuance (relieving letter, experience certificate, exit NDA). I noted that the offboarding module doesn't currently have an employee-facing signature collection form — this gap would be addressed in the upcoming e-signature week.
+
+## Learning Outcomes
+- Understood the awards nomination model and the time-window restriction via `awardWindow.js`
+- Learned the visual timeline pattern used in both onboarding and offboarding pages
+- Fixed the `.probation-timeline` CSS class issue causing incorrect button sizing
+- Identified the missing offboarding employee-facing signature form as a gap to be addressed
+
+## Challenges & Solutions
+No major blockers. The CSS fix was straightforward once I traced the selector chain in `OnboardingTimeline.css` that applied the button sizing rules only to elements inside `.probation-timeline`.
+
+---
+
+**Date:** Monday, 22 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Week eight began with a major feature: the digital e-signature system. I started with research on legal requirements before writing a single line of code. I studied the Indian Information Technology Act 2000 (IT Act 2000) Section 5 and 10A which gives legal recognition to electronic signatures and contracts. I also reviewed the US Electronic Signatures in Global and National Commerce Act (ESIGN) and the Uniform Electronic Transactions Act (UETA) for reference on what constitutes a legally valid electronic signature.
+
+The key requirements for legal validity are: (1) intent to sign — the signer must affirmatively consent, (2) attribution — the signature must be attributable to the specific person, (3) integrity — the signed document must be tamper-evident, (4) record retention — signatures must be retained for the legally required period (8 years for employment contracts under Indian labor law). I designed the signature system to satisfy all four requirements.
+
+I designed `SignatureRecordModel.js` as an immutable audit model. The schema stores: context (candidate_application/onboarding_offer/onboarding_policy/offboarding_exit), subjectType and subjectId (what was signed), empCode, signerName and signerEmail, consentAccepted flag, consentText (exact text of what was agreed to), documentType, documentVersion, documentHash (SHA-256 of the signed content), signatureImage Drive file ID, ipAddress, userAgent, signedAt, and retentionUntil (+8 years from signature).
+
+To make the model immutable, I added a `pre("save")` hook that blocks all saves on non-new documents, and `pre` hooks on all update/delete operations (`updateOne`, `updateMany`, `findOneAndUpdate`, `replaceOne`, `deleteOne`, `deleteMany`, `findOneAndDelete`, `findOneAndRemove`) that throw an error. This ensures that no signature record can ever be modified or deleted, even by a developer with direct MongoDB access through the application layer.
+
+## Learning Outcomes
+- Researched IT Act 2000, ESIGN, and UETA legal requirements for electronic signature validity
+- Designed the four pillars of the signature system: intent, attribution, integrity, retention
+- Built `SignatureRecordModel.js` as an immutable Mongoose model using pre-hooks to block all mutations
+- Understood the 8-year retention requirement and implemented `retentionUntil` as a Date field
+
+## Challenges & Solutions
+Making Mongoose models truly immutable required blocking not just `save()` but all the update/delete query methods. Missing even one (e.g., `findOneAndUpdate`) would leave a gap. I systematically listed all Mongoose mutation methods and added hooks for each.
+
+---
+
+**Date:** Tuesday, 23 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Continuing from yesterday's model design, today I implemented `services/signature/signatureService.js`. The `recordSignature(req, opts)` function is the single entry point for creating signature records across all contexts. It accepts all the fields needed to create a `SignatureRecordModel` document and handles two responsibilities: computing server-side fields (IP, user-agent, timestamp) that the client must never control, and uploading the signature image to Google Drive.
+
+For the IP address, I implemented `clientIp(req)` which reads `X-Forwarded-For` header first (since the backend runs behind a Docker reverse proxy and `req.ip` might be `::1`). The backend has `app.set("trust proxy", true)` set in `server.js`, which makes Express correctly interpret the `X-Forwarded-For` header. The signed-at timestamp is always `new Date()` computed on the server — the client's claimed timestamp is ignored.
+
+For document integrity, the function computes `documentHash = crypto.createHash("sha256").update(signedContent).digest("hex")`. The `signedContent` is a JSON string of the document contents (form fields, acknowledgement text, or the full document key). If the signed content ever changes after signature, the hash will no longer match — providing tamper evidence.
+
+For the signature image, if the caller provides an `existingDriveFileId` (used when the image was already uploaded as part of the application flow), the service reuses that file ID. Otherwise, it decodes the base64 data URL to a Buffer and calls `uploadFile()` from `driveService.js` to create a new Drive file in the employee's signatures folder.
+
+I also created `signatureController.js` with a single `listSignatures(req, res)` handler (GET only — no create/update/delete) and wired it into `server.js` as `GET /api/signatures`.
+
+## Learning Outcomes
+- Implemented `recordSignature()` as a server-side authority: IP, UA, and timestamp are always server-computed
+- Learned the SHA-256 document hash approach for tamper-evident integrity
+- Understood the `existingDriveFileId` optimization to avoid double-uploading when images are already in Drive
+- Reinforced that `listSignatures` is GET-only — no mutation endpoints exist, by design
+
+## Challenges & Solutions
+Decoding a base64 data URL to a Buffer requires stripping the `data:image/png;base64,` prefix before calling `Buffer.from(str, "base64")`. I added a `dataUrlToBuffer(dataUrl)` helper for this parsing.
+
+---
+
+**Date:** Wednesday, 24 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I built the frontend signature capture components. I created `SignaturePad.js` — a React component that provides the consent-gated canvas-based signature pad. The component accepts a `consentText` prop (the exact legal text to be agreed to) and an `onChange` callback that fires with `{ accepted, dataUrl, consentText }`.
+
+The consent gate is implemented as a checkbox: the canvas and drawing tools only appear after the user checks the box. This ensures the user has read and explicitly agreed to the consent text before they can draw their signature — satisfying the "intent to sign" legal requirement. Once the checkbox is checked, a 560×170 pixel HTML5 Canvas element appears below it.
+
+I implemented touch and mouse drawing support in the canvas using a single `useEffect` that runs when `accepted` becomes true. The effect adds event listeners for `mousedown`, `mousemove`, `mouseup`, `touchstart`, `touchmove`, and `touchend`. Touch coordinates are extracted using `touch.clientX - rect.left` with `getBoundingClientRect()` for accurate positioning regardless of scroll position. The canvas draws a 2px dark stroke following the pointer/finger movement. A "Clear" button resets the canvas by calling `ctx.clearRect()` and resetting the `hasInk` state.
+
+After each stroke ends (mouseup or touchend), the component calls `canvas.toDataURL("image/png")` and fires `onChange` with the new data URL. The parent component uses this to control whether the submit button is enabled — the submit button requires both `accepted === true` AND `dataUrl` to be non-empty (meaning the user has actually drawn something, not just ticked the checkbox).
+
+I also created `SignatureCredentials.js` — the viewer component that displays the audit trail for a signature record. It fetches `GET /api/signatures` with the appropriate query parameters, then displays the context badge, signer name and email, signed-at time, IP address, user-agent, consent text, document hash, and retention date. For the signature image, it creates a Blob URL from the Drive file fetched via the backend proxy — this prevents the image URL from expiring (as direct Drive share links can).
+
+## Learning Outcomes
+- Built `SignaturePad.js` with consent gate, HTML5 Canvas drawing, touch and mouse support
+- Understood why the consent checkbox must gate the canvas: satisfies legal "intent to sign" requirement
+- Implemented blob URL pattern for Drive image display: `URL.createObjectURL(blob)` with cleanup on unmount
+- Designed `SignatureCredentials.js` as a read-only audit viewer with no delete/modify options
+
+## Challenges & Solutions
+Touch events on mobile browsers don't automatically prevent page scrolling — `touchmove` caused the page to scroll while drawing. Adding `e.preventDefault()` in the `touchmove` handler (which requires a non-passive event listener: `{ passive: false }`) fixed this.
+
+---
+
+**Date:** Thursday, 25 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I integrated the e-signature feature into the three existing capture points: candidate application, onboarding offer letter, and onboarding policy sign-off. For the candidate application in `jobOpeningController.js`, I added a call to `recordSignature()` after `CandidateApplicationModel.create()`. The signature data URL is sent by the frontend along with the application form as a multipart field. The service reuses the already-uploaded signature file ID (`existingDriveFileId`) rather than uploading twice.
+
+For the onboarding offer letter acceptance in `OfferLetterResponse.js` (frontend), I added `SignaturePad` above the acknowledgement checkboxes. The `sig.dataUrl` and `sig.consentText` are included in the POST body. In the corresponding `respondPublicOfferLetter` handler, after saving the employee update, I added a call to `recordOnboardingSignature()` — a helper function I added to `onboardingController.js` that resolves the employee's Drive folder and calls `recordSignature()` with `context: "onboarding_offer"`. The call is wrapped in try/catch and is non-fatal: a signature service failure does not prevent the offer acceptance from completing.
+
+For the policy sign-off form (`DocumentSignForm.js` frontend), I added `SignaturePad` on the last page of the multi-document carousel. The signature only appears when the user has checked all document acknowledgement boxes and is on the final document. The `submitPublicSignDocs` backend handler then calls `recordOnboardingSignature()` with `context: "onboarding_policy"`.
+
+I integrated `SignatureCredentials` into `TalentPool.js` (shows application signature for candidates) and `EmployeeDetail.js` (shows onboarding signatures in the Documents tab). The Documents tab now has a section labeled "E-signatures (onboarding / offboarding)" that shows all signature records for the employee.
+
+## Learning Outcomes
+- Integrated signatures into three capture points: candidate application, offer letter, policy sign-off
+- Understood the non-fatal pattern: wrap signature calls in try/catch so failures don't block core flows
+- Learned the `existingDriveFileId` reuse pattern to avoid double uploads in the candidate application flow
+- Understood that `SignatureCredentials` acts as a universal viewer deployable at any point in the HR portal
+
+## Challenges & Solutions
+The offer letter response page is a public page (no HR auth), so the `recordOnboardingSignature` helper needed to resolve the employee's Drive folder using `emp_code` from the URL token rather than `req.user`. I updated the helper to accept an explicit `employee` document parameter instead of relying on `req.user`.
+
+---
+
+**Date:** Friday, 26 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+To close out week eight, I worked on the frontend design system unification. After several weeks of working across both portals, I noticed that the HR portal (`hrms-frontend`) and the Employee portal (`hrms-frontend-employee`) had drifted in their use of neutral colors — the HR portal had migrated to a slate palette (`#0f172a` dark text, `#f8fafc` background, `#e2e8f0` borders) while the employee portal still had older neutral grays (#333, #666, #eee, etc.).
+
+I ran a PowerShell script to find all hardcoded neutral color values in the employee portal's CSS files and replace them with the canonical slate equivalents. The mapping was: `#333333` / `#333` → `#0f172a`, `#666666` / `#666` → `#64748b`, `#999999` / `#999` → `#94a3b8`, `#eeeeee` / `#eee` → `#f1f5f9`, `#dddddd` / `#ddd` → `#e2e8f0`. The script used a regex with a negative lookahead `(?![0-9a-fA-F])` to avoid partial matches within 8-character hex values.
+
+I also unified the HR portal's `:root` CSS variable definitions in `main.css` to use consistent slate naming: `--color-bg: #f8fafc`, `--color-text: #0f172a`, `--color-text-secondary: #475569`, `--color-text-muted: #64748b`, `--color-border: #e2e8f0`, `--color-border-strong: #cbd5e1`, `--color-hover: #f1f5f9`. I updated legacy aliases (`--primary-light`, `--saffron-light`, `--teal-light`) to all map to `#f1f5f9` since they were previously different shades.
+
+I also added the glass-effect to the HR portal's top navigation bar in `Navbar.css`: `background: rgba(255,255,255,0.72)`, `backdrop-filter: blur(10px)`, `-webkit-backdrop-filter: blur(10px)`, and `box-shadow: 0 1px 3px rgba(15,23,42,0.05)`. This makes the topbar feel lighter and more modern compared to the previous solid white.
+
+## Learning Outcomes
+- Understood the importance of maintaining a canonical color palette across multiple frontends
+- Applied regex-based bulk replacement with safety guards to avoid partial hex matches
+- Learned how CSS `backdrop-filter: blur()` creates the frosted glass effect on the topbar
+- Reinforced the CSS variable token approach for maintainable theming
+
+## Challenges & Solutions
+The PowerShell regex replacement had to be carefully tested to avoid replacing colors inside JavaScript strings (like inline styles in component files). I tested on a subset of files before running the full replacement.
+
+---
+
+**Date:** Monday, 29 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+The final week of my internship began with the most complex feature area: the activity monitoring system. I read `MonitoringConfigModel.js` which stores the monitoring configuration: settings (screenshot interval, blur flag, idle threshold, sample window, heartbeat interval, etc.), a `configVersion` integer, and the admin password hash. The config model has a static `getActive()` method that fetches the single active config document (using `findOne({})` with a `setDefaultsOnInsert` upsert to create a default if none exists).
+
+I studied the monitoring architecture. The backend exposes two sets of routes: `/api/public/monitoring/*` (mounted outside `protect` — accessible to the Electron agent using a device token, not a user JWT) and `/api/monitoring/*` (mounted behind `protect` — HR dashboard endpoints). The agent authenticates using a device token created during enrollment, validated by `middleware/requireDeviceToken.js` which hashes the token and looks up the matching `TrackerDeviceModel` record.
+
+I studied the enrollment flow: the agent scans a QR code from the asset sticker, extracts the serial number and HMAC signature, sends them to `POST /api/public/monitoring/enroll`. The backend verifies the HMAC (using the same `ASSET_QR_SECRET` as the asset module), looks up the corresponding `AssetUnitModel`, gets the currently assigned employee's emp_code, creates/updates a `TrackerDeviceModel` record, and returns a randomly generated 64-character device token. The agent stores this token in its local config file and uses it for all subsequent API calls.
+
+I then read `monitoringController.js`'s `ingestSamples` handler which receives batches of up to 500 activity samples from the agent and bulk-inserts them into `ActivitySampleModel` using `insertMany`. The `monitoringJob.js` nightly job rolls up the raw samples into `ActivityDailySummaryModel` — one document per employee per day — which is what the HR dashboard queries for fast daily views.
+
+## Learning Outcomes
+- Understood the dual-route architecture: public device-token routes for agents, JWT routes for HR
+- Learned the QR-code-based enrollment flow and how it reuses the asset module's HMAC secret
+- Understood `insertMany` for high-volume activity sample ingestion
+- Learned the raw samples → daily summary rollup pattern via `monitoringJob.js`
+
+## Challenges & Solutions
+Understanding why device tokens are stored as SHA-256 hashes (not plaintext) in the database was important. Just like passwords, a raw token in the DB would be a security risk if the database were compromised. The `requireDeviceToken` middleware hashes the incoming token and compares against the stored hash.
+
+---
+
+**Date:** Tuesday, 30 June 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I worked on the `ActivityMonitor.js` HR admin page — the frontend interface for viewing device status, activity summaries, and screenshots. The page has three main sections: a device list (showing all enrolled devices with online/offline status based on last heartbeat time vs. `heartbeatTimeoutMin` policy), an activity view (showing hourly activity breakdown for a selected employee on a selected date), and a screenshot gallery (showing captured screenshots with a "View more in Drive" link).
+
+I studied how the online/offline status is computed in `monitoringController.js`'s `listDevices` handler. The controller fetches `MonitoringConfigModel` to get `heartbeatTimeoutMin` (default 5 minutes), then computes: `online = device.status !== "revoked" && device.lastSeenAt && (now - lastSeenAt.getTime()) <= timeoutMs`. This threshold-based approach means if an agent goes silent for more than 5 minutes, it's shown as "Connection lost" — which could indicate a crash, network outage, or intentional shutdown.
+
+For screenshots, the `getScreenshots` handler returns a limited set (up to 5 by default, max 50) and generates a Drive folder URL pointing to the full screenshot archive. The frontend shows thumbnails using `streamScreenshot` — a proxy route that fetches the Drive file via the service account and pipes it to the browser with a `Cache-Control: private, max-age=3600` header.
+
+I also worked on the config push mechanism: the `getConfig` and `saveConfig` HR endpoints allow HR to update monitoring settings. Every time an agent calls `heartbeat`, `ingestSamples`, or `uploadScreenshot`, the response includes `{ configVersion, settings }`. The agent compares the received `configVersion` with its locally stored version — if different, it hot-swaps the settings and re-schedules all timers. This means HR can change the screenshot interval from 10 minutes to 5 minutes, and all agents pick up the change within their next heartbeat cycle without requiring agent restarts.
+
+## Learning Outcomes
+- Understood online/offline status computation: heartbeat timeout check against `heartbeatTimeoutMin`
+- Learned the screenshot proxy pattern: backend streams Drive files to prevent public URL exposure
+- Understood the config hot-swap mechanism: every agent response carries `configVersion` for comparison
+- Understood that HR's config changes propagate to all agents automatically within one heartbeat cycle
+
+## Challenges & Solutions
+The screenshot gallery needed to prevent loading all thumbnails at once (could be hundreds for a day). I implemented lazy loading: only the first 5 are shown, with a "Load more" button that increments the `limit` parameter in the API call.
+
+---
+
+**Date:** Wednesday, 01 July 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I studied the Electron tracker agent codebase — `hrms-tracker-agent` — in depth. The agent is built with Electron 31 and uses CommonJS modules (unlike the backend's ES Modules). I read `src/main.js` which is the Electron entry point. Key behaviors: it uses `app.requestSingleInstanceLock()` to ensure only one instance runs — a second launch (from Start Menu or double-click) sends a signal to the already-running instance to open the admin panel instead of starting a second process. After enrollment, the app runs with no visible window, appearing only in the system tray.
+
+I studied the autostart and watchdog mechanism. On Windows, autostart uses `app.setLoginItemSettings({ openAtLogin: true, openAsHidden: true })` to add a registry entry for launching at login. The watchdog is a Windows Task Scheduler task created programmatically using `schtasks` via `child_process.execFile` — it runs every 5 minutes and attempts to launch the agent. Since the single-instance lock makes a relaunch a no-op when the agent is alive, this only has an effect when the agent was killed or crashed. This "resurrect on crash" design ensures the monitoring is always-on.
+
+I read `src/agent.js` — the core runtime loop. Every second, a `tick()` function classifies the elapsed second as active or idle by checking `Date.now() - input.getLastInputAt() > idleThresholdSec * 1000`. After each `sampleWindowSec` seconds (default 60), `flushWindow()` builds a sample object with the accumulated stats (activeSec, idleSec, keyCount, clickCount, mouseDistance, topApps, topSites, sessionEvents) and adds it to an in-memory buffer. Every `uploadFrequencySec` seconds, the buffer is drained to the backend via `api.ingestSamples()`.
+
+I also read `src/store.js` which uses `better-sqlite3` as an offline buffer. If the backend is unreachable, samples are written to a local SQLite database. When connectivity resumes, buffered samples are uploaded in batches. This ensures no activity data is lost during network outages.
+
+## Learning Outcomes
+- Understood the Electron single-instance lock and second-instance → admin panel redirect
+- Learned the Windows watchdog pattern using Task Scheduler via `schtasks` for always-on monitoring
+- Understood the `tick()` → `flushWindow()` → ingest pipeline in `agent.js`
+- Learned the SQLite offline buffer pattern: write locally when offline, drain when connectivity resumes
+
+## Challenges & Solutions
+Understanding the `powerSaveBlocker` usage in `main.js` required reading the Electron docs. On macOS, app napping can freeze background apps — the `prevent-app-suspension` blocker prevents this so heartbeats keep firing even with no visible window.
+
+---
+
+**Date:** Thursday, 02 July 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+Today I studied the four collector modules in `src/collectors/` and then worked on building the Windows NSIS installer. The `input.js` collector uses `uiohook-napi` — a native Node.js module that hooks into the operating system's input event stream. It counts keystrokes, clicks, mouse distance, and scroll events without recording any key content (only counts, never keycodes or characters). This is a privacy-preserving design: the system knows how active a user was without knowing what they typed.
+
+The `apps.js` collector uses `active-win` to poll the currently focused window every second. It tracks the application name, window title, and URL (for browsers). I noted that window titles can contain sensitive information (document names, email subjects), so the collector truncates titles to 100 characters and the HR portal shows a warning that window titles may contain personal information.
+
+The `screenshot.js` collector uses `screenshot-desktop` to capture the primary display (and secondary displays if configured). The screenshot is optionally processed through `jimp` to apply a blur effect if `settings.blur = true` — this allows monitoring that respects employee privacy by showing activity patterns without the actual screen content. Captured images are uploaded to Drive via the backend's `POST /api/public/monitoring/screenshot` route.
+
+The `power.js` collector listens to Electron's `powerMonitor` events: `lock-screen`, `unlock-screen`, `suspend`, `resume`, and `shutdown`. These events are buffered as `sessionEvents` in the next sample flush, providing the HR dashboard with insights like "Employee's screen was locked from 1:30 PM to 2:00 PM" (indicating a lunch break or meeting).
+
+For the Windows installer, I ran `npm run dist:win` which calls `electron-builder --win`. The build produces `dist/StasisMonitor-Setup-0.1.0.exe` — an NSIS installer with `perMachine: true` (installs for all users, requires admin) and `allowToChangeInstallationDirectory: true`. The native modules (`uiohook-napi`, `better-sqlite3`) are rebuilt for the correct Electron version during the build process.
+
+## Learning Outcomes
+- Understood all four collectors: input (counts only, no content), apps (active-win), screenshot (desktop capture + optional blur), power (session events)
+- Learned the privacy-preserving design of the input collector: keystroke counts, never key content
+- Understood the blur option as a privacy control: monitors activity patterns without exposing screen content
+- Learned the electron-builder NSIS configuration for a per-machine Windows installer
+
+## Challenges & Solutions
+`uiohook-napi` requires native compilation against the Electron runtime. The `postinstall` script runs `electron-rebuild -f -w uiohook-napi,better-sqlite3` to handle this. On the first `npm install`, this step takes about 2–3 minutes.
+
+---
+
+**Date:** Friday, 03 July 2026
+**Organization:** Saeculum Solutions
+**Project:** Stasis HRMS
+**Intern Name:** ___________
+**Supervisor:** ___________
+
+## Work Done
+
+On the final day of my internship, I completed the Windows executable build for the tracker agent and conducted a comprehensive review of all the work done over the nine weeks. The build process had a non-obvious challenge: Visual Studio Build Tools 2022 version 17.14 (June 2026) is newer than `@electron/node-gyp`'s version table, causing it to fall back to the `ClangCL` toolset in the generated `.vcxproj` files. Since ClangCL isn't installed, the native module compilation fails with `MSB8020: build tools for ClangCL cannot be found`.
+
+The fix required patching `node_modules/@electron/node-gyp/gyp/pylib/gyp/generator/msvs.py`. In the `_GetMsbuildToolsetOfProject` function, after the toolset is resolved, I added a check: `if toolset == "ClangCL": toolset = "v143"`. The MSVC v143 toolset (VS 2022) correctly builds both `uiohook-napi` and `better-sqlite3` as N-API modules. This patch lives in `node_modules` and is wiped by every `npm install`, so it must be reapplied after reinstalls. I documented this in the `MEMORY.md` project memory for future reference.
+
+The second build blocker was `electron-builder`'s `winCodeSign` bundle — it contains macOS dylib symlinks that require `SeCreateSymbolicLinkPrivilege` to extract on Windows. Enabling Developer Mode in Windows Settings (Settings → System → For developers) grants this privilege to regular users without needing administrator elevation. With both fixes applied, `npm run dist:win` completed successfully and produced `dist/StasisMonitor-Setup-0.1.0.exe` — a fully packaged NSIS installer for Stasis Monitor.
+
+I spent the final hours writing a comprehensive handover document for my supervisor, summarizing all the features implemented during the internship: the e-signature system, the WYSIWYG email builder, the leave balance inline editing grid, the frontend palette unification, and the Electron tracker agent Windows build. I also documented the two tracker agent build workarounds clearly so future developers can reproduce the build without encountering the same blockers.
+
+Reflecting on the nine weeks, I went from zero knowledge of the project to being able to independently implement full-stack features spanning backend Mongoose models, Express controller handlers, React frontend components, and Electron native modules. The most valuable learning was the discipline of reading existing code patterns before writing new code — every feature in Stasis HRMS follows consistent patterns that, once understood, make new feature development much faster and less error-prone.
+
+## Learning Outcomes
+- Successfully built `StasisMonitor-Setup-0.1.0.exe` using electron-builder with NSIS
+- Learned the node-gyp ClangCL → v143 patch for VS Build Tools 2022 17.14 compatibility
+- Understood the Windows Developer Mode requirement for electron-builder symlink extraction
+- Completed a comprehensive nine-week internship across all modules of a production-grade HRMS
+
+## Challenges & Solutions
+The ClangCL toolset fallback was the most cryptic error of the entire internship — the error message pointed to a missing toolset but gave no hint that it was caused by a version table mismatch in the gyp generator. Tracing the error to `msvs.py` required reading the node-gyp source code directly.
+
+---
+
+*End of Internship Daily Report — 4 May 2026 to 3 July 2026*
+*Total working days covered: 45*
+*Organization: Saeculum Solutions*
+*Project: Stasis HRMS*

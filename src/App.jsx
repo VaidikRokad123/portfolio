@@ -35,7 +35,7 @@ function App() {
       <div className="bg-grain" aria-hidden="true" />
 
       {/* Scroll progress bar */}
-      <ScrollProgress />
+      <ScrollProgress isPageLoaded={loaded} />
 
       {/* Fixed 3D Canvas — transparent so body bg-image shows through */}
       <Canvas

@@ -221,7 +221,6 @@ ol {
   background: linear-gradient(90deg, var(--primary), var(--accent), var(--blue));
   transform: scaleX(0);
   transform-origin: left;
-  box-shadow: 0 0 12px var(--primary-glow);
 }
 
 /* ================ UTILITIES ================ */
@@ -556,7 +555,6 @@ section {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 22px rgba(192, 132, 252, 0.35));
 }
 
 .hero-role-wrapper {
