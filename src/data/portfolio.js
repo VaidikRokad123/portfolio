@@ -191,4 +191,22 @@ export const achievements = [
     year: "2023–2025",
     color: "#f43f5e",
   },
+  {
+    title: "Second Runner-Up",
+    subtitle: "Project Expo & Hackathon",
+    description:
+      "Secured 2nd Runner-Up for the AI-Powered Restaurant Intelligence Platform in a project showcase, evaluated on AI integration and Twilio communication modules.",
+    icon: "ri-award-line",
+    year: "2024",
+    color: "#22d3ee",
+  },
+  {
+    title: "Internship Completion",
+    subtitle: "Saeculum Solutions Pvt. Ltd.",
+    description:
+      "Successfully completed a 2-month software development internship, building and deploying 15+ production features for a high-traffic enterprise web application.",
+    icon: "ri-medal-line",
+    year: "2026",
+    color: "#10b981",
+  },
 ];

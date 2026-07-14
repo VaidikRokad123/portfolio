@@ -64,6 +64,8 @@ const Preloader = ({ onComplete }) => {
     let windowLoaded = document.readyState === 'complete'
     let fontsReady = false
     let threeJsProgress = 0
+    let maxThreeJsProgress = 0
+    let maxCalculatedProgress = 0
     let hasThreeJsStarted = false
     let completed = false
 
@@ -71,7 +73,11 @@ const Preloader = ({ onComplete }) => {
       const winPart = windowLoaded ? 15 : 0
       const fontPart = fontsReady ? 15 : 0
       const threePart = threeJsProgress // Ranges 0 to 70
-      return Math.min(100, winPart + fontPart + threePart)
+      const current = Math.min(100, winPart + fontPart + threePart)
+      if (current > maxCalculatedProgress) {
+        maxCalculatedProgress = current
+      }
+      return maxCalculatedProgress
     }
 
     const checkAndAnimateProgress = () => {
@@ -120,19 +126,24 @@ const Preloader = ({ onComplete }) => {
     // Listen for Three.js asset loading managers (gltf dog models & textures)
     THREE.DefaultLoadingManager.onStart = () => {
       hasThreeJsStarted = true
-      threeJsProgress = 0
+      // Don't reset if it's already higher
       checkAndAnimateProgress()
     }
 
     THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
       hasThreeJsStarted = true
       if (itemsTotal > 0) {
-        threeJsProgress = (itemsLoaded / itemsTotal) * 70
+        const computed = (itemsLoaded / itemsTotal) * 70
+        if (computed > maxThreeJsProgress) {
+          maxThreeJsProgress = computed
+        }
       }
+      threeJsProgress = maxThreeJsProgress
       checkAndAnimateProgress()
     }
 
     THREE.DefaultLoadingManager.onLoad = () => {
+      maxThreeJsProgress = 70
       threeJsProgress = 70
       checkAndAnimateProgress()
     }
