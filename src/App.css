@@ -1146,10 +1146,7 @@ section {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 0.88rem;
   color: var(--text-dim);
 }
 
@@ -1186,12 +1183,10 @@ section {
 }
 
 .experience-bullet-desc {
-  font-family: var(--font-mono);
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   color: var(--text-muted);
-  line-height: 1.7;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+  line-height: 1.65;
+  font-weight: 300;
 }
 
 .experience-tech-tags {
@@ -1201,10 +1196,9 @@ section {
 }
 
 .experience-tech-tag {
-  font-family: var(--font-mono);
   padding: 0.25rem 0.75rem;
   border-radius: 6px;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 500;
   background: rgba(255, 255, 255, 0.03);
 }
