@@ -19,11 +19,11 @@ const Contact = () => {
 
     gsap.from('.contact-left', {
       scrollTrigger: { trigger: '.contact-grid', start: 'top 82%', once: true },
-      x: -50, opacity: 0, duration: 0.9, ease: 'power3.out',
+      x: -50, opacity: 0, duration: 0.9, ease: 'cubic-bezier(0.23, 1, 0.32, 1)',
     })
     gsap.from('.contact-right', {
       scrollTrigger: { trigger: '.contact-grid', start: 'top 82%', once: true },
-      x: 50, opacity: 0, duration: 0.9, ease: 'power3.out',
+      x: 50, opacity: 0, duration: 0.9, ease: 'cubic-bezier(0.23, 1, 0.32, 1)',
     })
   }, { scope: sectionRef })
 
@@ -53,12 +53,6 @@ const Contact = () => {
         <div className="contact-grid">
           {/* LEFT — heading + intro + socials */}
           <div className="contact-left">
-            <div className="section-label">
-              <span className="section-num">05</span>
-              <span className="section-label-line" />
-              <span>Get In Touch</span>
-            </div>
-
             <h2 className="contact-heading section-heading">
               <span className="contact-word word-1">Let&apos;s</span>{' '}
               <span className="contact-word word-2 serif-italic">Build</span>{' '}

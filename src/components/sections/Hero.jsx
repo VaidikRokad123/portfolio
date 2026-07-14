@@ -53,14 +53,13 @@ const Hero = ({ loaded = true }) => {
       rotateX: 0,
       duration: 1.1,
       stagger: 0.03,
-      ease: 'power4.out',
+      ease: 'cubic-bezier(0.23, 1, 0.32, 1)', // Emil custom ease-out
     })
-      .to('.hero-tag', { x: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, '-=0.4')
-      .to('.hero-role-wrapper', { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, '-=0.3')
-      .to('.hero-bio', { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, '-=0.3')
-      .to('.hero-btn', { y: 0, opacity: 1, duration: 0.5, stagger: 0.12, ease: 'power3.out' }, '-=0.2')
-      .to('.hero-socials', { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, '-=0.3')
-      .to('.hero-scroll-hint', { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.1')
+      .to('.hero-tag', { x: 0, opacity: 1, duration: 0.6, ease: 'cubic-bezier(0.23, 1, 0.32, 1)' }, '-=0.4')
+      .to('.hero-role-wrapper', { y: 0, opacity: 1, duration: 0.6, ease: 'cubic-bezier(0.23, 1, 0.32, 1)' }, '-=0.3')
+      .to('.hero-bio', { y: 0, opacity: 1, duration: 0.6, ease: 'cubic-bezier(0.23, 1, 0.32, 1)' }, '-=0.3')
+      .to('.hero-btn', { y: 0, opacity: 1, duration: 0.5, stagger: 0.12, ease: 'cubic-bezier(0.23, 1, 0.32, 1)' }, '-=0.2')
+      .to('.hero-socials', { y: 0, opacity: 1, duration: 0.5, ease: 'cubic-bezier(0.23, 1, 0.32, 1)' }, '-=0.3')
   }, { scope: containerRef, dependencies: [loaded] })
 
   // Typing effect — starts after the intro completes
@@ -167,18 +166,6 @@ const Hero = ({ loaded = true }) => {
           </div>
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      <div className="hero-scroll-hint">
-        <span className="scroll-hint-label">Scroll to explore</span>
-        <div className="scroll-hint-bar">
-          <div className="scroll-hint-fill" />
-        </div>
-      </div>
-
-      {/* Decorative lines (matching original DogStudio feel) */}
-      <div className="hero-deco-line hero-deco-line--1" />
-      <div className="hero-deco-line hero-deco-line--2" />
     </section>
   )
 }

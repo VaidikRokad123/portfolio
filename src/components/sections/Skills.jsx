@@ -101,19 +101,13 @@ const Skills = () => {
     revealCharsStagger(q('.skills-heading')[0])
     gsap.from('.skill-card', {
       scrollTrigger: { trigger: '.skills-cards-grid', start: 'top 85%', once: true },
-      y: 50, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power3.out',
+      y: 50, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'cubic-bezier(0.23, 1, 0.32, 1)',
     })
   }, { scope: sectionRef })
 
   return (
     <section id="skills" ref={sectionRef} className="skills-section">
       <div className="section-container">
-
-        <div className="section-label">
-          <span className="section-num">03</span>
-          <span className="section-label-line" />
-          <span>Tech Stack</span>
-        </div>
 
         <h2 className="skills-heading section-heading">
           My <span className="gradient-text">Skills</span>

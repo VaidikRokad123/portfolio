@@ -33,7 +33,7 @@ function splitIntoSpans(el, spanClass, initialStyles = {}) {
       }
       parent.replaceChild(fragment, node)
     } else if (node.nodeType === 1) { // Element node
-      if (!node.classList.contains(spanClass)) {
+      if (!node.classList.contains(spanClass) && !node.classList.contains('typewriter-cursor')) {
         const children = Array.from(node.childNodes)
         children.forEach(traverse)
       }
@@ -75,7 +75,7 @@ export function revealCharsStagger(el, vars = {}) {
     opacity: 1,
     duration: 0.8,
     stagger: 0.035,
-    ease: 'power4.out',
+    ease: 'cubic-bezier(0.23, 1, 0.32, 1)', // Emil custom ease-out
     scrollTrigger: { trigger: el, start: 'top 88%', once: true },
     ...vars,
   })
@@ -100,7 +100,7 @@ export function revealDepartures(el, vars = {}) {
     opacity: 1,
     duration: 0.95,
     stagger: 0.045,
-    ease: 'back.out(2.2)',
+    ease: 'back.out(2.2)', // back.out is fine for 3d flip (feels physical)
     scrollTrigger: { trigger: el, start: 'top 88%', once: true },
     ...vars,
   })
@@ -110,25 +110,35 @@ export function revealDepartures(el, vars = {}) {
 export function revealTypewriter(el, vars = {}) {
   if (!el || prefersReduced) return
 
-  const chars = splitIntoSpans(el, 'type-char', {
-    display: 'none'
-  })
+  // Check if text has already been split to avoid duplicate spans
+  const alreadySplit = el.querySelectorAll('.type-char').length > 0
 
-  // Create typing cursor element
-  const cursor = document.createElement('span')
-  cursor.className = 'typewriter-cursor'
-  cursor.textContent = '|'
-  cursor.style.display = 'inline-block'
-  cursor.style.color = '#c084fc' // var(--accent)
-  cursor.style.marginLeft = '2px'
-  el.appendChild(cursor)
+  const chars = alreadySplit
+    ? el.querySelectorAll('.type-char')
+    : splitIntoSpans(el, 'type-char', { display: 'none' })
+
+  // Find or create typewriter cursor
+  let cursor = el.querySelector('.typewriter-cursor')
+  if (!cursor) {
+    cursor = document.createElement('span')
+    cursor.className = 'typewriter-cursor'
+    cursor.textContent = '|'
+    cursor.style.display = 'inline-block'
+    cursor.style.color = '#c084fc' // var(--accent)
+    cursor.style.marginLeft = '2px'
+    el.appendChild(cursor)
+  }
+
+  // Ensure initial display state is set (important if restarting/re-mounting)
+  gsap.set(chars, { display: 'none' })
+  gsap.set(cursor, { opacity: 1, scale: 1 })
 
   // Blink cursor infinitely
   const blink = gsap.to(cursor, {
     opacity: 0,
     ease: 'steps(1)',
     repeat: -1,
-    duration: 0.6
+    duration: 1.1
   })
 
   const tl = gsap.timeline({
@@ -140,15 +150,6 @@ export function revealTypewriter(el, vars = {}) {
     stagger: 0.065,
     duration: 0.05
   })
-  .to(cursor, {
-    opacity: 0,
-    scale: 0,
-    duration: 0.35,
-    onComplete: () => {
-      blink.kill()
-      cursor.remove()
-    }
-  }, '+=0.2') // Wait 200ms after typing before removing cursor
 
   return tl
 }
@@ -171,7 +172,7 @@ export function revealWordCascade(el, vars = {}) {
     opacity: 1,
     duration: 0.8,
     stagger: 0.12,
-    ease: 'power3.out',
+    ease: 'cubic-bezier(0.23, 1, 0.32, 1)', // Emil custom ease-out
     scrollTrigger: { trigger: el, start: 'top 88%', once: true },
     ...vars,
   })
@@ -189,7 +190,7 @@ export function revealLines(el, vars = {}) {
       opacity: 0,
       filter: 'blur(6px)',
       duration: 0.9,
-      ease: 'power3.out',
+      ease: 'cubic-bezier(0.23, 1, 0.32, 1)', // Emil custom ease-out
       scrollTrigger: { trigger: el, start: 'top 88%', once: true },
       ...vars,
     })
@@ -214,7 +215,7 @@ export function revealLines(el, vars = {}) {
         filter: 'blur(0px)',
         duration: 1.0,
         stagger: 0.08,
-        ease: 'power3.out',
+        ease: 'cubic-bezier(0.23, 1, 0.32, 1)', // Emil custom ease-out
         scrollTrigger: {
           trigger: el,
           start: 'top 88%',

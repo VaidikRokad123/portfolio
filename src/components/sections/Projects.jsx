@@ -167,7 +167,7 @@ const Projects = () => {
 
     gsap.from('.project-card', {
       scrollTrigger: { trigger: '.projects-grid', start: 'top 82%', once: true },
-      y: 50, opacity: 0, duration: 0.7, stagger: 0.12, ease: 'power3.out',
+      y: 50, opacity: 0, duration: 0.7, stagger: 0.12, ease: 'cubic-bezier(0.23, 1, 0.32, 1)',
     })
 
     q('.project-index').forEach((el) => parallax(el, -28))
@@ -176,12 +176,6 @@ const Projects = () => {
   return (
     <section id="projects" ref={sectionRef} className="projects-section">
       <div className="section-container">
-        <div className="section-label">
-          <span className="section-num">02</span>
-          <span className="section-label-line" />
-          <span>Featured Work</span>
-        </div>
-
         <h2 className="projects-heading section-heading">
           Things I&apos;ve <span className="gradient-text">Built</span>
         </h2>

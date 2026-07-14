@@ -29,15 +29,15 @@ const Achievements = () => {
         x: i % 2 === 0 ? -60 : 60,
         opacity: 0,
         duration: 0.75,
-        ease: 'power3.out',
+        ease: 'cubic-bezier(0.23, 1, 0.32, 1)',
       })
     })
 
-    // Dot pulse on enter
+    // Dot pulse on enter — emil-design-eng: never animate from scale(0)
     gsap.utils.toArray('.ach-dot').forEach((dot) => {
       gsap.from(dot, {
         scrollTrigger: { trigger: dot, start: 'top 88%' },
-        scale: 0,
+        scale: 0.6,
         opacity: 0,
         duration: 0.4,
         ease: 'back.out(2)',
@@ -49,7 +49,7 @@ const Achievements = () => {
     <section id="achievements" ref={sectionRef} className="ach-section">
       <div className="section-container">
         <div className="section-label">
-          <span className="section-num">04</span>
+          <span className="section-num">02</span>
           <span className="section-label-line" />
           <span>Recognition</span>
         </div>

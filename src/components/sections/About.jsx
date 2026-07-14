@@ -43,16 +43,16 @@ const About = () => {
     revealLines(q('.about-bio')[0])
     gsap.from('.about-edu-card', {
       scrollTrigger: { trigger: '.about-edu-card', start: 'top 85%', once: true },
-      x: -40, opacity: 0, duration: 0.8, ease: 'power3.out',
+      x: -40, opacity: 0, duration: 0.8, ease: 'cubic-bezier(0.23, 1, 0.32, 1)',
     })
     // CP cards: only translate, NO opacity so they're never invisible
     gsap.from('.cp-card', {
       scrollTrigger: { trigger: '.about-cp-grid', start: 'top 92%', once: true },
-      y: 20, duration: 0.5, stagger: 0.1, ease: 'power3.out',
+      y: 20, duration: 0.5, stagger: 0.1, ease: 'cubic-bezier(0.23, 1, 0.32, 1)',
     })
     gsap.from('.about-stat-card', {
       scrollTrigger: { trigger: '.about-stats-row', start: 'top 92%', once: true },
-      y: 15, duration: 0.45, stagger: 0.08, ease: 'power3.out',
+      y: 15, duration: 0.45, stagger: 0.08, ease: 'cubic-bezier(0.23, 1, 0.32, 1)',
     })
 
     // CGPA counter

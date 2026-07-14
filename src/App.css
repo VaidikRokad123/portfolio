@@ -24,8 +24,22 @@
   --border-hover: rgba(129, 140, 248, 0.5);
   --radius: 16px;
   --radius-sm: 10px;
-  --font: 'Inter', sans-serif;
+  --font: 'Satoshi', 'Geist', system-ui, sans-serif;
   --font-display: 'Space Grotesk', sans-serif;
+
+  /* Emil Kowalski custom easing curves — punchy, intentional */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Z-index discipline — no arbitrary 9999 */
+  --z-canvas: 1;
+  --z-content: 2;
+  --z-nav: 100;
+  --z-modal: 200;
+  --z-overlay: 300;
+  --z-grain: 400;
+  --z-scroll-progress: 500;
 }
 
 /* ================ RESET ================ */
@@ -198,7 +212,7 @@ ol {
 .bg-grain {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: var(--z-grain);
   pointer-events: none;
   opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -211,7 +225,7 @@ ol {
   left: 0;
   right: 0;
   height: 3px;
-  z-index: 10000;
+  z-index: var(--z-scroll-progress);
   background: transparent;
   pointer-events: none;
 }
@@ -254,14 +268,24 @@ ol {
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  /* top light-edge reflection gives the glass real depth */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  /* Double-bezel: outer top light-edge + inner diffused highlight for machined-glass depth */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+  /* Emil: specify exact properties — never transition: all */
+  transition:
+    border-color 0.3s var(--ease-out),
+    background 0.3s var(--ease-out),
+    transform 0.3s var(--ease-out),
+    box-shadow 0.3s var(--ease-out);
 }
 
-.glass-card:hover {
-  background: var(--surface-hover);
-  border-color: var(--border-hover);
+@media (hover: hover) and (pointer: fine) {
+  .glass-card:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+  }
 }
 
 .section-container {
@@ -275,7 +299,7 @@ ol {
   font-size: clamp(2.6rem, 6.5vw, 5rem);
   font-weight: 700;
   line-height: 1.04;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   color: var(--text);
   margin-bottom: 2.5rem;
   /* clip-path reveal needs a little breathing room for descenders */
@@ -288,8 +312,9 @@ ol {
   backface-visibility: hidden;
 }
 
+/* Emphasis word — same sans-serif family, italic weight (skills: never mix serif into sans headline) */
 .serif-italic {
-  font-family: 'Playfair Display', 'Didot', 'Georgia', serif;
+  font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
   text-transform: none;
@@ -297,7 +322,7 @@ ol {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  padding-right: 0.08em; /* offset to prevent italics glyph clipping */
+  padding-right: 0.08em;
 }
 
 .section-label {
@@ -345,18 +370,24 @@ ol {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 9999;
+  z-index: var(--z-nav);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1rem 2.5rem;
+  max-height: 72px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 16px;
-  transition: background 0.4s ease, padding 0.3s ease, top 0.3s ease,
-    left 0.3s ease, right 0.3s ease, border-color 0.3s ease,
-    box-shadow 0.3s ease;
-  animation: navSlideIn 0.6s ease-out both;
+  transition:
+    background 0.4s var(--ease-out),
+    padding 0.3s var(--ease-out),
+    top 0.3s var(--ease-out),
+    left 0.3s var(--ease-out),
+    right 0.3s var(--ease-out),
+    border-color 0.3s var(--ease-out),
+    box-shadow 0.3s var(--ease-out);
+  animation: navSlideIn 0.6s var(--ease-out) both;
 }
 
 @keyframes navSlideIn {
@@ -369,17 +400,20 @@ ol {
   }
 }
 
-/* Scrolled: detach into a floating glass pill */
+/* Scrolled: detach into a floating glass pill — Apple translucent material */
 .navbar--scrolled {
   top: 0.75rem;
   left: 1rem;
   right: 1rem;
-  background: rgba(5, 5, 8, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(5, 5, 8, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-color: var(--border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  /* Double-bezel: bright top edge = light catching the material */
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.65rem 1.8rem;
 }
 
@@ -436,12 +470,21 @@ ol {
   transition: width 0.3s ease;
 }
 
-.nav-link:hover {
-  color: var(--text);
-}
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover {
+    color: var(--text);
+  }
 
-.nav-link:hover::after {
-  width: 100%;
+  .nav-link:hover::after {
+    width: 100%;
+  }
+
+  .nav-resume-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
 }
 
 /* Active section highlight */
@@ -464,14 +507,16 @@ ol {
   font-size: 0.84rem;
   font-weight: 500;
   color: var(--primary);
-  transition: all 0.25s ease;
+  transition:
+    background 0.25s var(--ease-out),
+    color 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out),
+    transform 0.16s var(--ease-out);
 }
 
-.nav-resume-btn:hover {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-  box-shadow: 0 0 20px var(--primary-glow);
+.nav-resume-btn:active {
+  transform: scale(0.97);
 }
 
 .nav-hamburger {
@@ -491,14 +536,25 @@ ol {
   height: 2px;
   background: var(--text);
   border-radius: 2px;
-  transition: all 0.3s ease;
+  transition: transform 0.4s var(--ease-out), opacity 0.4s var(--ease-out);
+}
+
+.nav-hamburger--open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-hamburger--open span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-hamburger--open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 /* ================ HERO SECTION ================ */
 main {
   position: relative;
-  z-index: 2;
-  /* above canvas (z-index:1) but below navbar (z-index:9999) */
+  z-index: var(--z-content);
 }
 
 section {
@@ -507,12 +563,13 @@ section {
   scroll-margin-top: 85px;
 }
 
+/* Hero: use 100dvh to prevent iOS Safari address bar jump */
 .hero-section {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   background: transparent;
-  /* dog + background-l.png show fully */
+  /* Skills: cap hero top padding at pt-24 (6rem) */
   padding-top: 6rem;
   padding-bottom: 3rem;
 }
@@ -636,7 +693,19 @@ section {
   border-radius: 10px;
   font-size: 0.92rem;
   font-weight: 600;
-  transition: all 0.3s ease;
+  /* Emil: specify exact properties, use custom easing */
+  transition:
+    transform 0.2s var(--ease-out),
+    box-shadow 0.3s var(--ease-out),
+    background 0.3s var(--ease-out),
+    border-color 0.3s var(--ease-out),
+    color 0.3s var(--ease-out);
+}
+
+/* Apple + Emil: buttons must feel responsive to press */
+.hero-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.1s var(--ease-out);
 }
 
 .hero-btn--primary {
@@ -776,7 +845,8 @@ section {
   backdrop-filter: blur(2px);
 }
 
-.about-bio {
+.about-bio,
+.contact-intro {
   font-size: 1.05rem;
   color: var(--text-muted);
   line-height: 1.8;
@@ -1197,7 +1267,7 @@ section {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: var(--z-modal);
   background: rgba(5, 5, 8, 0.85);
   backdrop-filter: blur(10px);
   display: flex;
@@ -1985,7 +2055,7 @@ section {
     align-items: center;
     gap: 2.5rem;
     font-size: 1.2rem;
-    z-index: 9999;
+    z-index: var(--z-nav);
   }
 
   .nav-links--open {
@@ -1994,7 +2064,7 @@ section {
 
   .nav-hamburger {
     display: flex;
-    z-index: 101;
+    z-index: calc(var(--z-nav) + 10);
   }
 
   .nav-resume-btn {
@@ -2163,7 +2233,7 @@ html.is-loading body {
 .preloader {
   position: fixed;
   inset: 0;
-  z-index: 100000;
+  z-index: var(--z-overlay);
   background: #05040e;
   display: flex;
   align-items: center;
@@ -2278,7 +2348,7 @@ html.is-loading body {
   left: 0;
   border-radius: 50%;
   pointer-events: none;
-  z-index: 100001;
+  z-index: calc(var(--z-overlay) + 10);
   visibility: hidden;
   opacity: 0;
   /* centering handled by negative margins; GSAP owns the transform (x/y) */
