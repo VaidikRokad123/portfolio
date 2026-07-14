@@ -45,6 +45,26 @@ export const personalInfo = {
   ],
 };
 
+export const experience = [
+  {
+    id: "saeculum",
+    company: "Saeculum Solutions Pvt. Ltd.",
+    role: "Software Development Intern",
+    location: "Ahmedabad, Gujarat, India",
+    period: "May 2026 – Jul 2026",
+    color: "#818cf8",
+    glow: "rgba(129, 140, 248, 0.35)",
+    icon: "ri-briefcase-line",
+    tags: ["React", "Node.js", "Express", "MongoDB", "RBAC", "Google APIs", "Docker"],
+    bullets: [
+      "Engineered 15+ full-stack features for an internal enterprise web platform on the MERN stack (React, Node.js, Express, MongoDB), shipping across 2 role-based portals serving administrative and self-service users.",
+      "Architected a granular Role-Based Access Control (RBAC) system with JWT authentication and a multi-level nested permission tree, securing 30+ REST API endpoints and conditionally rendering UI by user role.",
+      "Automated time-driven business workflows using a MongoDB-backed priority queue and cron schedulers, eliminating manual follow-ups by auto-dispatching reminders and notifications across 3 channels (email, chat, calendar).",
+      "Integrated 3+ Google APIs (Gmail OAuth2, Drive, Calendar) for transactional email, document storage, and event scheduling, and containerized backend services with Docker for reproducible deployments."
+    ]
+  }
+];
+
 export const projects = [
   {
     id: "restaurant-ai",
