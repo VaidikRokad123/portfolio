@@ -48,11 +48,6 @@ const Achievements = () => {
   return (
     <section id="achievements" ref={sectionRef} className="ach-section">
       <div className="section-container">
-        <div className="section-label">
-          <span className="section-num">02</span>
-          <span className="section-label-line" />
-          <span>Recognition</span>
-        </div>
 
         <h2 className="ach-heading section-heading">
           Milestones &amp; <span className="gradient-text">Achievements</span>

@@ -74,12 +74,6 @@ const About = () => {
     <section id="about" ref={sectionRef} className="about-section">
       <div className="section-container">
 
-        <div className="section-label">
-          <span className="section-num">01</span>
-          <span className="section-label-line" />
-          <span>About Me</span>
-        </div>
-
         <h2 className="about-heading section-heading">
           Passionate about <span className="gradient-text">building</span> &amp;{' '}
           <span className="gradient-text">competing</span>

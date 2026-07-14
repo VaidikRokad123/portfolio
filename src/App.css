@@ -26,6 +26,7 @@
   --radius-sm: 10px;
   --font: 'Satoshi', 'Geist', system-ui, sans-serif;
   --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', 'Space Mono', monospace;
 
   /* Emil Kowalski custom easing curves — punchy, intentional */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -1145,7 +1146,10 @@ section {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  font-size: 0.88rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--text-dim);
 }
 
@@ -1182,10 +1186,12 @@ section {
 }
 
 .experience-bullet-desc {
-  font-size: 0.95rem;
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
   color: var(--text-muted);
-  line-height: 1.65;
-  font-weight: 300;
+  line-height: 1.7;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 .experience-tech-tags {
@@ -1195,9 +1201,10 @@ section {
 }
 
 .experience-tech-tag {
+  font-family: var(--font-mono);
   padding: 0.25rem 0.75rem;
   border-radius: 6px;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 500;
   background: rgba(255, 255, 255, 0.03);
 }
