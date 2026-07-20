@@ -34,7 +34,11 @@ const Contact = () => {
     setIsSubmitting(true)
     setErrorMessage('')
 
-    const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY
+    let accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY
+
+    if (accessKey) {
+      accessKey = accessKey.trim().replace(/^["']|["']$/g, '')
+    }
 
     if (!accessKey) {
       setErrorMessage("Access key missing. Please check VITE_WEB3FORMS_ACCESS_KEY in your env file.")
