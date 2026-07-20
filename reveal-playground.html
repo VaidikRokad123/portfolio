@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Reveal Playground — Vaidik Rokad Portfolio</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Space Grotesk + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,500&display=swap" rel="stylesheet">
+  
+  <!-- GSAP CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          },
+          colors: {
+            bg: '#050314',
+            surface: 'rgba(8, 6, 28, 0.55)',
+            border: 'rgba(129, 140, 248, 0.18)',
+            primary: '#818cf8',
+            accent: '#c084fc',
+            blue: '#60a5fa'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #050314;
+      background-image: radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.08) 0%, transparent 80%);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    
+    /* Reveal Styles helper */
+    .word-span, .char-span {
+      display: inline-block;
+      white-space: pre;
+    }
+    .clip-wrapper {
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: bottom;
+    }
+    
+    /* Mirror Split Styling */
+    .mirror-container {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+    }
+    .mirror-top, .mirror-bottom {
+      display: block;
+      height: 50%;
+      overflow: hidden;
+      position: relative;
+    }
+    .mirror-bottom-inner {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      transform: translateY(50%);
+    }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-border py-6 px-8 flex justify-between items-center bg-bg/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-blue">VR •</span>
+      <span class="text-sm text-slate-400 font-mono">Text Reveal Playground</span>
+    </div>
+    <div class="text-xs text-slate-400 bg-slate-900 border border-slate-800 rounded-full px-3 py-1 font-mono">
+      Interactive Preview File
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 lg:p-8 max-w-7xl mx-auto w-full">
+    
+    <!-- Left Sidebar: Selection List -->
+    <div class="lg:col-span-4 flex flex-col gap-4 max-h-[82vh] overflow-y-auto pr-2 border-r border-border/50">
+      <h3 class="text-sm font-mono text-slate-400 px-3 uppercase tracking-wider mb-2">Select Animation Effect</h3>
+      <div id="selection-list" class="flex flex-col gap-2">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+    
+    <!-- Right Panel: Interactive Canvas & Code -->
+    <div class="lg:col-span-8 flex flex-col gap-6">
+      
+      <!-- Preview Frame -->
+      <div class="bg-slate-950/70 border border-border rounded-2xl p-12 flex flex-col justify-center items-center min-h-[350px] relative overflow-hidden backdrop-blur-sm">
+        <!-- Subtle Grid lines -->
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-40"></div>
+        
+        <!-- Replay Indicator / Hover badge -->
+        <button onclick="triggerSelectedAnimation()" class="absolute top-4 right-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-slate-300 transition active:scale-95">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"></path></svg>
+          Replay Effect
+        </button>
+
+        <!-- Canvas Text container -->
+        <div id="canvas-text-wrapper" class="w-full text-center select-none z-10">
+          <!-- Text will be injected dynamically -->
+        </div>
+      </div>
+
+      <!-- Description & Code Section -->
+      <div class="bg-slate-900/60 border border-border/60 rounded-xl p-6 flex flex-col gap-4 font-sans">
+        <div>
+          <h4 id="effect-title" class="text-xl font-bold font-display text-white mb-1">Select an Effect</h4>
+          <p id="effect-desc" class="text-sm text-slate-300 leading-relaxed"></p>
+        </div>
+        
+        <div class="border-t border-border/30 pt-4 flex flex-col gap-2">
+          <span class="text-xs font-mono text-slate-400">GSAP Implementation Code</span>
+          <pre class="bg-black/50 border border-black/30 rounded-lg p-4 text-xs font-mono text-accent/90 overflow-x-auto max-h-[220px] scrollbar-thin">
+            <code id="effect-code">// Select an animation from the list to see code</code>
+          </pre>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // 16 Custom Reveal Effects Matching the User's Motion Design references
+    const EFFECTS = [
+      {
+        id: 'apple-reveal',
+        name: 'Apple Event (3D Roll & Blur)',
+        desc: 'The gold-standard reveal seen in Apple taglines. Text rolls up from a clip mask while rotating in 3D space and smoothly resolving its focus from camera blur.',
+        code: `// GSAP Implementation:
+gsap.set(el, { 
+  transformOrigin: "50% 100% -30px",
+  filter: "blur(12px)", 
+  opacity: 0, 
+  rotateX: -20, 
+  scale: 0.95,
+  clipPath: "inset(100% 0 0 0)" 
+});
+
+gsap.to(el, {
+  clipPath: "inset(0% 0 0 0)",
+  rotateX: 0,
+  scale: 1,
+  opacity: 1,
+  filter: "blur(0px)",
+  duration: 1.3,
+  ease: "power4.out"
+});`
+      },
+      {
+        id: 'word-cascade',
+        name: 'Word Cascade',
+        desc: 'Words rise one-by-one with staggered offsets, creating a modern flowing reading pace.',
+        code: `// GSAP Implementation:
+const words = splitIntoWords(el); // Wrap words in spans
+gsap.set(words, { y: 40, opacity: 0 });
+
+gsap.to(words, {
+  y: 0,
+  opacity: 1,
+  duration: 0.8,
+  stagger: 0.12,
+  ease: "power3.out"
+});`
+      },
+      {
+        id: 'char-stagger',
+        name: 'Cascading Letters (Stagger)',
+        desc: 'Every letter is animated separately with a tight, wave-like delay. Creates a liquid, high-frequency entry effect.',
+        code: `// GSAP Implementation:
+const chars = splitIntoChars(el); // Wrap letters in spans
+gsap.set(chars, { yPercent: 100, opacity: 0 });
+
+gsap.to(chars, {
+  yPercent: 0,
+  opacity: 1,
+  duration: 0.8,
+  stagger: 0.03,
+  ease: "power4.out"
+});`
+      },
+      {
+        id: 'antinomy-appear',
+        name: 'Antinomy Appear (Soft Glow)',
+        desc: 'Text fades in gently from a deep blur and expands outwards slightly, looking like it materialized out of light.',
+        code: `// GSAP Implementation:
+gsap.set(el, { filter: "blur(18px)", opacity: 0, scale: 0.93 });
+
+gsap.to(el, {
+  filter: "blur(0px)",
+  opacity: 1,
+  scale: 1,
+  duration: 1.4,
+  ease: "power2.out"
+});`
+      },
+      {
+        id: 'stretch-in',
+        name: 'Antinomy Stretch',
+        desc: 'The letters start squeezed together horizontally, then stretch outward to normal spacing as they fade into view.',
+        code: `// GSAP Implementation:
+gsap.set(el, { letterSpacing: "-1.5em", opacity: 0, scaleX: 0.6 });
+
+gsap.to(el, {
+  letterSpacing: "-0.025em", // normal
+  opacity: 1,
+  scaleX: 1,
+  duration: 1.2,
+  ease: "power3.out"
+});`
+      },
+      {
+        id: 'bouncy-period',
+        name: 'Bouncy Baseline',
+        desc: 'Text drops from above and lands with a minor, elastic bounce on the baseline, giving it a playful, spring-like feel.',
+        code: `// GSAP Implementation:
+gsap.set(el, { y: -50, opacity: 0 });
+
+gsap.to(el, {
+  y: 0,
+  opacity: 1,
+  duration: 1.1,
+  ease: "elastic.out(1, 0.75)"
+});`
+      },
+      {
+        id: 'squeeze-in',
+        name: 'Squeeze & Release',
+        desc: 'Text starts highly scaled out on the X axis (extra wide) and squishes back into standard proportions.',
+        code: `// GSAP Implementation:
+gsap.set(el, { scaleX: 2.2, opacity: 0, filter: "blur(4px)" });
+
+gsap.to(el, {
+  scaleX: 1,
+  opacity: 1,
+  filter: "blur(0px)",
+  duration: 1.0,
+  ease: "power4.out"
+});`
+      },
+      {
+        id: 'glitch-flicker',
+        name: 'Glitch Text Reveal',
+        desc: 'A digital glitch entrance. Text flickers in opacity, scales erratically, and uses a slight horizontal pixel shift.',
+        code: `// GSAP Implementation:
+const tl = gsap.timeline();
+tl.set(el, { opacity: 0, x: -10, scaleY: 1.3 })
+  .to(el, { opacity: 0.3, x: 8, duration: 0.05 })
+  .to(el, { opacity: 0.1, x: -5, scaleY: 0.8, duration: 0.05 })
+  .to(el, { opacity: 0.8, x: 2, scaleY: 1.1, duration: 0.05 })
+  .to(el, { opacity: 1, x: 0, scaleY: 1, duration: 0.15, ease: "power2.out" });`
+      },
+      {
+        id: 'departures-board',
+        name: 'Departures Board (3D Flip)',
+        desc: 'Letters spin rapidly on their X-axis (from 90deg to 0deg) matching the physical action of airport departure screens.',
+        code: `// GSAP Implementation:
+const chars = splitIntoChars(el);
+gsap.set(chars, { rotateX: -90, transformOrigin: "50% 50% -20px", opacity: 0 });
+
+gsap.to(chars, {
+  rotateX: 0,
+  opacity: 1,
+  duration: 0.9,
+  stagger: 0.04,
+  ease: "back.out(2)"
+});`
+      },
+      {
+        id: 'mirror-split',
+        name: 'Mirror Split',
+        desc: 'Text is sliced in half horizontally; the top half slides down from above, and the bottom half slides up from below to align.',
+        code: `// GSAP Implementation:
+// Double the text inside top and bottom masked containers
+gsap.set(".top-half", { y: -30, opacity: 0 });
+gsap.set(".bottom-half", { y: 30, opacity: 0 });
+
+gsap.to([".top-half", ".bottom-half"], {
+  y: 0,
+  opacity: 1,
+  duration: 0.9,
+  ease: "power3.out"
+});`
+      },
+      {
+        id: 'typing-cursor',
+        name: 'Typewriter with Cursor',
+        desc: 'Letters appear one-by-one in typewriter speed, paired with a custom pulsing terminal cursor symbol.',
+        code: `// GSAP Implementation:
+const chars = splitIntoChars(el);
+gsap.set(chars, { display: "none" });
+
+const tl = gsap.timeline();
+tl.to(chars, {
+  display: "inline-block",
+  stagger: 0.07,
+  duration: 0.1
+});`
+      },
+      {
+        id: 'spiral-reveal',
+        name: 'Spiral In (Scale & Spin)',
+        desc: 'Letters spin 180 degrees from a scaled-down center, expanding outward like a typography vortex.',
+        code: `// GSAP Implementation:
+const chars = splitIntoChars(el);
+gsap.set(chars, { scale: 0, rotate: -180, opacity: 0 });
+
+gsap.to(chars, {
+  scale: 1,
+  rotate: 0,
+  opacity: 1,
+  duration: 1.0,
+  stagger: 0.025,
+  ease: "power2.out"
+});`
+      },
+      {
+        id: 'scale-glow',
+        name: 'Scale & Brightness Glow',
+        desc: 'Text starts scaled down with a blinding white blur filter, and scales up to standard clarity and color.',
+        code: `// GSAP Implementation:
+gsap.set(el, { scale: 0.85, filter: "brightness(3) blur(8px)", opacity: 0 });
+
+gsap.to(el, {
+  scale: 1,
+  filter: "brightness(1) blur(0px)",
+  opacity: 1,
+  duration: 1.2,
+  ease: "power4.out"
+});`
+      },
+      {
+        id: 'vertical-slide',
+        name: 'Sleek Line Reveal',
+        desc: 'Clean, simple, high-end vertical slide-up from a masked container with standard coordinates.',
+        code: `// GSAP Implementation:
+gsap.set(el, { yPercent: 105, opacity: 0 });
+
+gsap.to(el, {
+  yPercent: 0,
+  opacity: 1,
+  duration: 1.0,
+  ease: "power3.out"
+});`
+      },
+      {
+        id: 'crt-flicker',
+        name: 'CRT Terminal Boot',
+        desc: 'Replicates old CRT monitors turning on. The line starts as a thin horizontal dot and expands vertically with flicker.',
+        code: `// GSAP Implementation:
+const tl = gsap.timeline();
+tl.set(el, { scaleY: 0.01, scaleX: 0, filter: "brightness(4)", opacity: 0 })
+  .to(el, { scaleX: 1, opacity: 1, duration: 0.3, ease: "power2.out" })
+  .to(el, { scaleY: 1, filter: "brightness(1)", duration: 0.4, ease: "bounce.out" });`
+      },
+      {
+        id: 'reveal-mask-invert',
+        name: 'Color Inversion Slide',
+        desc: 'A background block slides across, and the text color inverts (changing colors dynamically) as the block passes over.',
+        code: `// GSAP Implementation:
+// Sets up a solid color overlay div.
+// Slides overlay from width 0% to 100%, then slides away.
+// Text updates color dynamically as the block slides.`
+      }
+    ];
+
+    let selectedEffectId = 'apple-reveal';
+
+    // Helper functions to split text for character/word animations
+    function setupTextStructure(effectId) {
+      const wrapper = document.getElementById('canvas-text-wrapper');
+      wrapper.innerHTML = ''; // reset
+
+      // Base sentence: Let's Build Something
+      if (effectId === 'mirror-split') {
+        wrapper.innerHTML = `
+          <div class="relative inline-block text-4xl lg:text-6xl font-bold font-display uppercase tracking-tight py-4">
+            <!-- Top Half -->
+            <span class="top-half block text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-blue" 
+                  style="clip-path: inset(0 0 50% 0);">
+              Let's Build Something
+            </span>
+            <!-- Bottom Half (absolute overlay) -->
+            <span class="bottom-half absolute inset-0 block text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-blue py-4" 
+                  style="clip-path: inset(50% 0 0 0);">
+              Let's Build Something
+            </span>
+          </div>
+        `;
+        return;
+      }
+
+      if (effectId === 'reveal-mask-invert') {
+        // Special DOM for mask invert
+        wrapper.innerHTML = `
+          <div class="relative inline-block py-2 px-6 overflow-hidden">
+            <div id="invert-block" class="absolute left-0 top-0 h-full bg-accent z-0" style="width: 0px;"></div>
+            <h2 id="invert-text" class="text-4xl lg:text-6xl font-bold font-display uppercase tracking-tight text-white relative z-10">
+              Let's Build Something
+            </h2>
+          </div>
+        `;
+        return;
+      }
+
+      // Normal headings
+      const h2 = document.createElement('h2');
+      h2.id = 'demo-text';
+      h2.className = 'text-4xl lg:text-6xl font-bold font-display uppercase tracking-tight leading-normal';
+      
+      // HTML content with custom styled "Build" (matching serif italic style)
+      const baseHTML = 'Let\'s <span class="gradient-text serif-italic text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-blue pr-2 font-serif italic font-normal text-5xl lg:text-7xl normal-case">Build</span> Something';
+      
+      if (effectId === 'char-stagger' || effectId === 'departures-board' || effectId === 'spiral-reveal' || effectId === 'typing-cursor') {
+        // Split by characters
+        // We temporarily replace the HTML with text to split easily
+        const textStr = "LET'S BUILD SOMETHING";
+        let content = '';
+        for (let i = 0; i < textStr.length; i++) {
+          const char = textStr[i];
+          if (char === ' ') {
+            content += ' ';
+          } else {
+            content += `<span class="char-span">${char}</span>`;
+          }
+        }
+        h2.innerHTML = content;
+      } else if (effectId === 'word-cascade') {
+        // Split by words
+        h2.innerHTML = `
+          <span class="word-span">Let's</span> 
+          <span class="word-span serif-italic text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-blue font-serif italic font-normal normal-case text-5xl lg:text-7xl">Build</span> 
+          <span class="word-span">Something</span>
+        `;
+      } else {
+        h2.innerHTML = baseHTML;
+      }
+
+      wrapper.appendChild(h2);
+    }
+
+    // Trigger selected animation script
+    function triggerSelectedAnimation() {
+      const effect = EFFECTS.find(e => e.id === selectedEffectId);
+      if (!effect) return;
+
+      // Update Text structure
+      setupTextStructure(selectedEffectId);
+
+      const el = document.getElementById('demo-text');
+
+      // Kill any active tweens on these elements to prevent collision
+      gsap.killTweensOf('#demo-text');
+      gsap.killTweensOf('.char-span');
+      gsap.killTweensOf('.word-span');
+      gsap.killTweensOf('.top-half');
+      gsap.killTweensOf('.bottom-half');
+      gsap.killTweensOf('#invert-block');
+      gsap.killTweensOf('#invert-text');
+
+      // Trigger specific GSAP timeline
+      switch (selectedEffectId) {
+        case 'apple-reveal':
+          gsap.set(el.parentElement, { perspective: 1000 });
+          gsap.set(el, { 
+            transformOrigin: "50% 100% -30px",
+            filter: "blur(12px)", 
+            opacity: 0, 
+            rotateX: -20, 
+            scale: 0.95,
+            clipPath: "inset(100% 0 0 0)" 
+          });
+          gsap.to(el, {
+            clipPath: "inset(0% 0 0 0)",
+            rotateX: 0,
+            scale: 1,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 1.3,
+            ease: "power4.out"
+          });
+          break;
+
+        case 'word-cascade':
+          const words = document.querySelectorAll('.word-span');
+          gsap.set(words, { y: 45, opacity: 0 });
+          gsap.to(words, {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.14,
+            ease: "power3.out"
+          });
+          break;
+
+        case 'char-stagger':
+          const chars = document.querySelectorAll('.char-span');
+          gsap.set(chars, { yPercent: 110, opacity: 0 });
+          gsap.to(chars, {
+            yPercent: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.035,
+            ease: "power4.out"
+          });
+          break;
+
+        case 'antinomy-appear':
+          gsap.set(el, { filter: "blur(18px)", opacity: 0, scale: 0.92 });
+          gsap.to(el, {
+            filter: "blur(0px)",
+            opacity: 1,
+            scale: 1,
+            duration: 1.4,
+            ease: "power2.out"
+          });
+          break;
+
+        case 'stretch-in':
+          gsap.set(el, { letterSpacing: "-0.6em", opacity: 0, scaleX: 0.65 });
+          gsap.to(el, {
+            letterSpacing: "0.025em",
+            opacity: 1,
+            scaleX: 1,
+            duration: 1.25,
+            ease: "power3.out"
+          });
+          break;
+
+        case 'bouncy-period':
+          gsap.set(el, { y: -65, opacity: 0 });
+          gsap.to(el, {
+            y: 0,
+            opacity: 1,
+            duration: 1.25,
+            ease: "elastic.out(1, 0.72)"
+          });
+          break;
+
+        case 'squeeze-in':
+          gsap.set(el, { scaleX: 2.3, opacity: 0, filter: "blur(5px)" });
+          gsap.to(el, {
+            scaleX: 1,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 1.1,
+            ease: "power4.out"
+          });
+          break;
+
+        case 'glitch-flicker':
+          const tl = gsap.timeline();
+          tl.set(el, { opacity: 0, x: -12, scaleY: 1.35 })
+            .to(el, { opacity: 0.3, x: 8, duration: 0.04 })
+            .to(el, { opacity: 0.1, x: -6, scaleY: 0.8, duration: 0.04 })
+            .to(el, { opacity: 0.7, x: 3, scaleY: 1.15, duration: 0.04 })
+            .to(el, { opacity: 1, x: 0, scaleY: 1, duration: 0.18, ease: "power2.out" });
+          break;
+
+        case 'departures-board':
+          const depChars = document.querySelectorAll('.char-span');
+          gsap.set(depChars, { rotateX: -95, transformOrigin: "50% 50% -20px", opacity: 0 });
+          gsap.to(depChars, {
+            rotateX: 0,
+            opacity: 1,
+            duration: 0.95,
+            stagger: 0.045,
+            ease: "back.out(2.2)"
+          });
+          break;
+
+        case 'mirror-split':
+          const top = document.querySelector('.top-half');
+          const bot = document.querySelector('.bottom-half');
+          gsap.set(top, { y: -35, opacity: 0 });
+          gsap.set(bot, { y: 35, opacity: 0 });
+          gsap.to([top, bot], {
+            y: 0,
+            opacity: 1,
+            duration: 0.9,
+            ease: "power3.out"
+          });
+          break;
+
+        case 'typing-cursor':
+          const typeChars = document.querySelectorAll('.char-span');
+          gsap.set(typeChars, { display: "none" });
+          const typeTl = gsap.timeline();
+          typeTl.to(typeChars, {
+            display: "inline-block",
+            stagger: 0.065,
+            duration: 0.05
+          });
+          break;
+
+        case 'spiral-reveal':
+          const spinChars = document.querySelectorAll('.char-span');
+          gsap.set(spinChars, { scale: 0.1, rotate: -180, opacity: 0 });
+          gsap.to(spinChars, {
+            scale: 1,
+            rotate: 0,
+            opacity: 1,
+            duration: 0.95,
+            stagger: 0.028,
+            ease: "power2.out"
+          });
+          break;
+
+        case 'scale-glow':
+          gsap.set(el, { scale: 0.82, filter: "brightness(4) blur(10px)", opacity: 0 });
+          gsap.to(el, {
+            scale: 1,
+            filter: "brightness(1) blur(0px)",
+            opacity: 1,
+            duration: 1.3,
+            ease: "power4.out"
+          });
+          break;
+
+        case 'vertical-slide':
+          gsap.set(el, { yPercent: 105, opacity: 0 });
+          gsap.to(el, {
+            yPercent: 0,
+            opacity: 1,
+            duration: 1.05,
+            ease: "power3.out"
+          });
+          break;
+
+        case 'crt-flicker':
+          const crtTl = gsap.timeline();
+          crtTl.set(el, { scaleY: 0.01, scaleX: 0, filter: "brightness(4)", opacity: 0 })
+            .to(el, { scaleX: 1, opacity: 1, duration: 0.28, ease: "power2.out" })
+            .to(el, { scaleY: 1, filter: "brightness(1)", duration: 0.42, ease: "bounce.out" });
+          break;
+
+        case 'reveal-mask-invert':
+          const block = document.getElementById('invert-block');
+          const txt = document.getElementById('invert-text');
+          gsap.set(block, { left: "0%", width: "0%" });
+          gsap.set(txt, { opacity: 0 });
+          
+          const maskTl = gsap.timeline();
+          maskTl.to(block, { width: "100%", duration: 0.45, ease: "power2.inOut" })
+                .set(txt, { opacity: 1 })
+                .to(block, { left: "100%", width: "0%", duration: 0.45, ease: "power2.inOut" });
+          break;
+      }
+    }
+
+    // Set active effect
+    function selectEffect(effectId) {
+      selectedEffectId = effectId;
+      
+      // Update UI list classes
+      const items = document.querySelectorAll('.effect-item');
+      items.forEach(item => {
+        if (item.dataset.id === effectId) {
+          item.classList.add('bg-primary/20', 'border-primary/50', 'text-white');
+          item.classList.remove('bg-slate-900/40', 'border-border/40', 'text-slate-400');
+        } else {
+          item.classList.remove('bg-primary/20', 'border-primary/50', 'text-white');
+          item.classList.add('bg-slate-900/40', 'border-border/40', 'text-slate-400');
+        }
+      });
+
+      // Update descriptions
+      const effect = EFFECTS.find(e => e.id === effectId);
+      if (effect) {
+        document.getElementById('effect-title').textContent = effect.name;
+        document.getElementById('effect-desc').textContent = effect.desc;
+        document.getElementById('effect-code').textContent = effect.code;
+      }
+
+      // Re-trigger animation
+      triggerSelectedAnimation();
+    }
+
+    // Populate Sidebar selection list on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const list = document.getElementById('selection-list');
+      EFFECTS.forEach((effect, i) => {
+        const btn = document.createElement('button');
+        btn.className = `effect-item text-left w-full px-4 py-3 rounded-xl border text-sm font-medium transition active:scale-98 flex justify-between items-center ${
+          effect.id === selectedEffectId 
+            ? 'bg-primary/20 border-primary/50 text-white' 
+            : 'bg-slate-900/40 border-border/40 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+        }`;
+        btn.dataset.id = effect.id;
+        btn.onclick = () => selectEffect(effect.id);
+        
+        btn.innerHTML = `
+          <span>${effect.name}</span>
+          <span class="text-[10px] font-mono opacity-50">#${String(i + 1).padStart(2, '0')}</span>
+        `;
+        list.appendChild(btn);
+      });
+
+      // Load initial effect details
+      selectEffect(selectedEffectId);
+    });
+  </script>
+</body>
+</html>
