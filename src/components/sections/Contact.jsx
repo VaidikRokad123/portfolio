@@ -10,7 +10,9 @@ gsap.registerPlugin(ScrollTrigger)
 const Contact = () => {
   const sectionRef = useRef(null)
   const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useGSAP(() => {
     const q = gsap.utils.selector(sectionRef)
@@ -27,13 +29,49 @@ const Contact = () => {
     })
   }, { scope: sectionRef })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    const subject = encodeURIComponent(`Portfolio Contact from ${form.name}`)
-    const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`)
-    window.open(`mailto:${personalInfo.email}?subject=${subject}&body=${body}`)
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 4000)
+    setIsSubmitting(true)
+    setErrorMessage('')
+
+    const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY
+
+    if (!accessKey) {
+      setErrorMessage("Access key missing. Please check VITE_WEB3FORMS_ACCESS_KEY in your env file.")
+      setIsSubmitting(false)
+      return
+    }
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          access_key: accessKey,
+          name: form.name,
+          email: form.email,
+          message: form.message,
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setSubmitted(true)
+        setForm({ name: '', email: '', message: '' })
+        setTimeout(() => setSubmitted(false), 5000)
+      } else {
+        setErrorMessage(data.message || "Failed to send message. Please try again.")
+      }
+    } catch (err) {
+      setErrorMessage("Network error. Please check your internet connection and try again.")
+      console.error("Submission error:", err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
@@ -111,8 +149,16 @@ const Contact = () => {
                 />
               </div>
 
-              <button type="submit" className="contact-submit-btn" data-magnetic disabled={submitted}>
-                {submitted ? (
+              {errorMessage && (
+                <div className="contact-error-msg">
+                  <i className="ri-error-warning-line" /> {errorMessage}
+                </div>
+              )}
+
+              <button type="submit" className="contact-submit-btn" data-magnetic disabled={isSubmitting || submitted}>
+                {isSubmitting ? (
+                  <><i className="ri-loader-4-line" style={{ display: 'inline-block', animation: 'spin-anim 1s linear infinite' }} /> Sending...</>
+                ) : submitted ? (
                   <><i className="ri-check-line" /> Message Sent!</>
                 ) : (
                   <><i className="ri-send-plane-line" /> Send Message</>
