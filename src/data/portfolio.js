@@ -55,10 +55,11 @@ export const experience = [
     color: "#818cf8",
     glow: "rgba(129, 140, 248, 0.35)",
     icon: "ri-briefcase-line",
-    tags: ["React", "Node.js", "Express", "MongoDB", "RBAC", "Google APIs", "Docker"],
+    tags: ["React", "Node.js", "Express", "MongoDB", "RBAC", "GPT-4o", "Google APIs", "Docker"],
     bullets: [
       "Engineered 15+ full-stack features for an internal enterprise web platform on the MERN stack (React, Node.js, Express, MongoDB), shipping across 2 role-based portals serving administrative and self-service users.",
       "Architected a granular Role-Based Access Control (RBAC) system with JWT authentication and a multi-level nested permission tree, securing 30+ REST API endpoints and conditionally rendering UI by user role.",
+      "Designed an agentic AI orchestration layer atop GPT-4o with a context-aware tool loader that silos and dynamically injects domain-specific function tools by query intent, executing a bounded 6-step reasoning-action loop with a hallucination guard against unverified database claims.",
       "Automated time-driven business workflows using a MongoDB-backed priority queue and cron schedulers, eliminating manual follow-ups by auto-dispatching reminders and notifications across 3 channels (email, chat, calendar).",
       "Integrated 3+ Google APIs (Gmail OAuth2, Drive, Calendar) for transactional email, document storage, and event scheduling, and containerized backend services with Docker for reproducible deployments."
     ]
